@@ -12,7 +12,7 @@ It includes :
 import os, sys
 import tkinter as tk
 from tkinter import ttk
-from tkinter import scrolledtext
+from ttkbootstrap.scrolled import ScrolledText
 import ttkbootstrap as tb
 from CAN_Simulation.simulate import *
 
@@ -26,6 +26,7 @@ STOPPED = 1
 ################################################################################
 # Classes
 ################################################################################
+# Represents the UI 
 class CANSimGUI(tb.Window):
     def __init__(self):
         self.startsimcallback = None
@@ -49,12 +50,12 @@ class CANSimGUI(tb.Window):
         notebook.add(cryalgo_tab, text="Crypto Algorithms")
 
         cryalgo_label = tb.Label(cryalgo_tab, text="Select Cryptographic Algorithm:", 
-                                 bootstyle="info", justify="left")
-        cryalgo_label.pack(pady=10)
+                                 bootstyle="info", anchor = "w")
+        cryalgo_label.pack(fill=tk.X, padx=10, pady=20)
 
         # Radio button for selecting the algorithm
-        self.selected_algo = tk.StringVar(value="RC4")
-        for algo in ["RC4", "Speck", "TEA", "CMAC", "HMAC" ]:
+        self.selected_algo = tk.StringVar(value="None")
+        for algo in ["None", "RC4", "Speck", "TEA", "CMAC", "HMAC" ]:
             rb_cryalgo_tab = tb.Radiobutton(cryalgo_tab, text=algo, variable=self.selected_algo, 
                                             value=algo, bootstyle="info")
             rb_cryalgo_tab.pack(anchor="w", padx=20)
@@ -63,8 +64,8 @@ class CANSimGUI(tb.Window):
         perf_tab = tb.Frame(notebook)
         notebook.add(perf_tab, text="Performance")
 
-        perf_label = tb.Label(perf_tab, text="Performance Metrics", bootstyle="info", justify="left")
-        perf_label.pack(pady=10)
+        perf_label = tb.Label(perf_tab, text="Performance Metrics", bootstyle="info", anchor = "w")
+        perf_label.pack(fill=tk.X, padx=10, pady=20)
 
         # Tab 3: Algorithm Comparison
         compare_tab = tb.Frame(notebook)
@@ -73,8 +74,24 @@ class CANSimGUI(tb.Window):
         #Console for Printing the logs
         console_frame = tb.Frame(self)
         console_frame.pack(fill="x", pady=10)
-        self.perf_text = scrolledtext.ScrolledText(console_frame, height=15)
-        self.perf_text.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+        console_label = tb.Label(console_frame, text="Console", bootstyle="info", anchor = "w")
+        console_label.pack(fill=tk.X, padx=10, pady=20)
+        
+        # Create a tabbed view inside the Console
+        notebook_console = ttk.Notebook(self, width=500, height=200, bootstyle="secondary")
+        notebook_console.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        #For Sender
+        sender_tab = tb.Frame(notebook_console)
+        notebook_console.add(sender_tab, text="Sender")
+        self.sender_console_text = ScrolledText(sender_tab, height=15, bootstyle="secondary")
+        self.sender_console_text.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+
+        #For Receiver
+        receiver_tab = tb.Frame(notebook_console)
+        notebook_console.add(receiver_tab, text="Receiver")
+        self.recv_console_text = ScrolledText(receiver_tab, height=15, bootstyle="secondary")
+        self.recv_console_text.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
         # Set simulation state to STOPPED, initially
         self.simulation = STOPPED
@@ -96,10 +113,15 @@ class CANSimGUI(tb.Window):
             #Call the stop simulation callback
             self.startsimcallback()
 
-    # Function for printing into the text box
-    def printtotextbox(self, msg):
-        self.perf_text.insert(tk.END, msg + "\n")
-        self.perf_text.see(tk.END)
+    # Function for printing into the Sender Console text box
+    def printtosenderconsole(self, msg):
+        self.sender_console_text.insert(tk.END, msg + "\n")
+        self.sender_console_text.see(tk.END)
+
+    # Function for printing into the Receiver Console text box
+    def printtoreceiverconsole(self, msg):
+        self.recv_console_text.insert(tk.END, msg + "\n")
+        self.recv_console_text.see(tk.END)
 
 
 ################################################################################

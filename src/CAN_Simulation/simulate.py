@@ -129,7 +129,6 @@ class CanBus:
         # Create Virtual CAN Bus
         self.bus = can.interface.Bus(busname, bustype='socketcan', bitrate=250000)
         self.nodes : List[Node] = []
-        self.consoleprint = None
         
 # Represents a CAN Simulation
 class CanSim:

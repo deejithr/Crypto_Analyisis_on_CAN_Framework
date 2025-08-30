@@ -26,11 +26,13 @@ sim = None
 # print in the console
 def setcallbackforconsoleprint(objcansim):
     for eachCanBus in objcansim.CanbusList:
-        # Set callback for BusObject first
-        eachCanBus.consoleprint = app.printtotextbox
         #Set callback for each Node in the Can bus
         for eachNode in eachCanBus.nodes:
-            eachNode.consoleprint = app.printtotextbox
+            # Depeending on the type of Node
+            if (NODE_SENDER == eachNode.nodetype):
+                eachNode.consoleprint = app.printtosenderconsole
+            else:
+                eachNode.consoleprint = app.printtoreceiverconsole
 
 ################################################################################
 # Main
@@ -38,6 +40,7 @@ def setcallbackforconsoleprint(objcansim):
 if __name__ == "__main__":
     # Start the UI
     app = CANSimGUI()
+    # Init the Sim environment
     sim = CanSim()
 
     #Initializa the CAN Bus
