@@ -37,30 +37,30 @@ DELAY_20_MS = 20/1000
 ################################################################################
 
 # Global variable to indicate the CAN simulation state.
-# Simulation will be stopped, once the variable becomes False
+# Simulation will be stopped, once the state becomes False
 simulationstate = False
-
-# Objects for CAN Bus
-objcanbus_1 = None
-objcanbus_2 = None
-
 
 ################################################################################
 # Classes
 ################################################################################
+# Represents a CAN Message
 class CANMessage:
     def __init__(self, canid, data, isextended):
         self.arbritration_id = canid
         self.data = data
         self.isextended = isextended
 
+# Represents node in the Communication Bus
 class Node:
     def __init__(self, nodename, nodetype, bus):
         self.nodename = nodename
         self.nodetype = nodetype
         self.nodebus = bus
+        self.consoleprint = None
 
-        # Create thread for Sender and Reciever
+    # Function to create thread for the Node
+    def createthread(self):
+        # Create thread based on sender or Receiver
         try:
             if self.nodetype == NODE_SENDER:
                 self.thread = threading.Thread(target=self.action_sender, args=())
@@ -72,6 +72,7 @@ class Node:
         #Start the Thread
         self.thread.start()
 
+    # Function for actions to be performed by the Sender
     def action_sender(self):
         global simulationstate
         print("Sender Node: " + self.nodename +  " Initiated")
@@ -102,7 +103,7 @@ class Node:
         print("Sender Node: " + self.nodename +  " de-initialized")
         self.nodestatus = NODE_DEINITIALIZED
         
-
+    # Function for actions to be performed by the Receiver
     def action_receiver(self):
         global simulationstate
         print("Receiver Node: " + self.nodename +  " Initiated")
@@ -112,7 +113,7 @@ class Node:
             try:
                 received = self.nodebus.recv(1.0)  # timeout = 1s
                 if received:
-                    print(f"Received: {received}")
+                    self.consoleprint(f"Received: {received}")
                     decrypteddata = perform_decryption(received.data)
             except:
                 print("[Error] Reception error")
@@ -121,62 +122,74 @@ class Node:
         self.nodestatus = NODE_DEINITIALIZED
 
 
-
+# Represents a CAN Communication Bus
 class CanBus:
     def __init__(self, busname):
         self.busname = busname
         # Create Virtual CAN Bus
         self.bus = can.interface.Bus(busname, bustype='socketcan', bitrate=250000)
         self.nodes : List[Node] = []
+        self.consoleprint = None
         
+# Represents a CAN Simulation
+class CanSim:
+    def __init__(self):
+        self.CanbusList: List[CanBus] = []
 
+    #Function to Initialize the bus
+    def initializebus(self):
+        global objcanbus_1, objcanbus_2
+        # Initialize CAN Bus
+        objcanbus_1 = CanBus("vcan0")
+        objcanbus_2 = CanBus("vcan0")
+
+        #Add to the BusList
+        self.CanbusList.append(objcanbus_1)
+        self.CanbusList.append(objcanbus_2)
+
+        #Instantiate the Nodes
+        objcanbus_1.nodes.append(Node("ECU1", NODE_SENDER, objcanbus_1.bus))
+        objcanbus_2.nodes.append(Node("ECU2", NODE_RECEIVER, objcanbus_2.bus))
+
+    # This function starts the simulation
+    def start_simulation(self):
+        global simulationstate
+
+        # Set the simulation State to TRUE
+        simulationstate = True
+
+        #Start each Node
+        for eachBus in self.CanbusList:
+            instantiatenodes(eachBus)
+
+    # This function stops the simulation
+    def stop_simulation(self):
+        global simulationstate
+
+        # Set Simulation State to False
+        print(f"Stopping simulation... ")
+        simulationstate = False
+
+        # Wait for the nodes to be de-initialized
+        while (
+            NODE_DEINITIALIZED != self.CanbusList[0].nodes[0].nodestatus or
+            NODE_DEINITIALIZED != self.CanbusList[1].nodes[0].nodestatus
+        ):
+            pass
+
+        # # Once all the nodes are released, then close the CAN bus interface
+        # print("Releasing the CAN bus Interface - " + self.CanbusList[0].busname)
+        # self.CanbusList[0].bus.shutdown()
+     
 ################################################################################
 # Functions
 ################################################################################
-def start_simulation():
-    global simulationstate
-    global objcanbus_1, objcanbus_2
-    """Start the CAN simulation.
+# Function to start threads for each Node in the Can bus
+def instantiatenodes(objbus):
+    for eachNode in objbus.nodes:
+        eachNode.createthread()
 
-    This function starts CAN simulation.
 
-    Parameters
-    ----------
-    None
-
-    Returns
-    -------
-    None
-    """
-    # Set the simulation State to TRUE
-    simulationstate = True
-
-    # Initialize CAN Bus
-    objcanbus_1 = CanBus("vcan0")
-    objcanbus_2 = CanBus("vcan0")
-
-    #Instantiate the Nodes
-    objcanbus_1.nodes.append(Node("ECU1", NODE_SENDER, objcanbus_1.bus))
-    objcanbus_2.nodes.append(Node("ECU2", NODE_RECEIVER, objcanbus_2.bus))
-
-def stop_simulation():
-    global simulationstate
-    global objcanbus_1, objcanbus_2
-
-    # Set Simulation State to False
-    print(f"Stopping simulation... ")
-    simulationstate = False
-
-    # Wait for the nodes to be de-initialized
-    while (
-        NODE_DEINITIALIZED != objcanbus_1.nodes[0].nodestatus or
-        NODE_DEINITIALIZED != objcanbus_2.nodes[0].nodestatus
-    ):
-        pass
-
-    # Once all the nodes are released, then close the CAN bus interface
-    print("Releasing the CAN bus Interface - " + objcanbus_1.busname)
-    objcanbus_1.bus.shutdown()
 
     
     
