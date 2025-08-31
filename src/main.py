@@ -11,6 +11,8 @@ It includes :
 import os, sys
 from ui.ui_elements import *
 
+
+
 ################################################################################
 # Globals
 ################################################################################
@@ -18,6 +20,8 @@ from ui.ui_elements import *
 app = None
 # variable for CanSim Object
 sim = None
+
+
 
 ################################################################################
 # Functions
@@ -33,6 +37,13 @@ def setcallbackforconsoleprint(objcansim):
                 eachNode.consoleprint = app.printtosenderconsole
             else:
                 eachNode.consoleprint = app.printtoreceiverconsole
+ 
+#Function that will be called on algorithm selection               
+def selectencryptionalgo():
+    selected = app.selected_algo.get()
+    setencryptionalgo(selected)
+
+
 
 ################################################################################
 # Main
@@ -48,9 +59,14 @@ if __name__ == "__main__":
 
     # Set callback for ConsolePrint
     setcallbackforconsoleprint(sim)
+
     # Set callbacks for Start/Stop Simulation in UI
     app.startsimcallback = sim.start_simulation
     app.stopsimcallback = sim.stop_simulation
+
+    # Set command for crypto algorithm selection
+    for eachbutton in app.rb_cryalgo_tab:
+        eachbutton.config(command=selectencryptionalgo)
 
     #Run the application
     app.mainloop()

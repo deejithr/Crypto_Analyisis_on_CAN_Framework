@@ -16,12 +16,16 @@ from ttkbootstrap.scrolled import ScrolledText
 import ttkbootstrap as tb
 from CAN_Simulation.simulate import *
 
+
+
 ################################################################################
 # Macros
 ################################################################################
 #Enum for simulation start/stop
 STARTED = 0
 STOPPED = 1
+
+
 
 ################################################################################
 # Classes
@@ -32,7 +36,7 @@ class CANSimGUI(tb.Window):
         self.startsimcallback = None
         self.stopsimcallback = None
         super().__init__(title="CryptoAnalysis for CAN", themename="cosmo")
-        self.geometry("1024x768")
+        self.geometry("1200x768")
 
         # Start and Stop simulation
         button_frame = tb.Frame(self)
@@ -55,10 +59,13 @@ class CANSimGUI(tb.Window):
 
         # Radio button for selecting the algorithm
         self.selected_algo = tk.StringVar(value="None")
+        self.rb_cryalgo_tab = []
+        index = 0
         for algo in ["None", "RC4", "Speck", "TEA", "CMAC", "HMAC" ]:
-            rb_cryalgo_tab = tb.Radiobutton(cryalgo_tab, text=algo, variable=self.selected_algo, 
-                                            value=algo, bootstyle="info")
-            rb_cryalgo_tab.pack(anchor="w", padx=20)
+            self.rb_cryalgo_tab.append(tb.Radiobutton(cryalgo_tab, text=algo, variable=self.selected_algo, 
+                                            value=algo, bootstyle="info"))
+            self.rb_cryalgo_tab[index].pack(anchor="w", padx=20, pady = 10)
+            index = index + 1
 
         # Tab for Performance Measurements
         perf_tab = tb.Frame(notebook)
@@ -76,6 +83,9 @@ class CANSimGUI(tb.Window):
         console_frame.pack(fill="x", pady=10)
         console_label = tb.Label(console_frame, text="Console", bootstyle="info", anchor = "w")
         console_label.pack(fill=tk.X, padx=10, pady=20)
+        self.clearlog = tb.Button(console_frame, text="Clear Log",
+                                   bootstyle="dark", command=self.clearconsole)
+        self.clearlog.pack(side="left", padx=10)
         
         # Create a tabbed view inside the Console
         notebook_console = ttk.Notebook(self, width=500, height=200, bootstyle="secondary")
@@ -122,6 +132,12 @@ class CANSimGUI(tb.Window):
     def printtoreceiverconsole(self, msg):
         self.recv_console_text.insert(tk.END, msg + "\n")
         self.recv_console_text.see(tk.END)
+
+    def clearconsole(self):
+        self.sender_console_text.delete("1.0", "end")
+        self.recv_console_text.delete("1.0", "end")
+
+
 
 
 ################################################################################

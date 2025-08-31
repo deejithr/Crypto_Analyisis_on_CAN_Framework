@@ -17,6 +17,7 @@ from datetime import datetime as dt
 from encrypt_decrypt.perform_encryption_decryption import *
 
 
+
 ################################################################################
 # Macros
 ################################################################################
@@ -32,6 +33,7 @@ NODE_INITIALIZED = 1
 DELAY_20_MS = 20/1000
 
 
+
 ################################################################################
 # Globals
 ################################################################################
@@ -39,6 +41,8 @@ DELAY_20_MS = 20/1000
 # Global variable to indicate the CAN simulation state.
 # Simulation will be stopped, once the state becomes False
 simulationstate = False
+
+
 
 ################################################################################
 # Classes
@@ -83,8 +87,19 @@ class Node:
 
         while True == simulationstate:
             try:
+                
+                # Start Measurement
+                encryptiontime = 0
+                encryptionstarttime = time.perf_counter()
                 #Perform Encryption
                 encrypteddata = perform_encryption(data)
+                # Start Measurement
+                encryptionendtime = time.perf_counter()
+
+                #Time taken for encryption
+                encryptiontime = (encryptionendtime - encryptionstarttime) * us_DURATION
+
+                print("Sender: Data before Encryption:  " + str(data))
                 
                 # Create CAN Message
                 can_msg = CANMessage(0xC0FFEE, encrypteddata, True)
@@ -95,7 +110,10 @@ class Node:
                     is_extended_id=can_msg.isextended)
                 
                 self.nodebus.send(msg)
-                # Send the message with a delay of 20ms
+                
+                self.consoleprint(f"Sent: {msg} t_encrypt: {encryptiontime:.3f} us")
+
+                # Send the message with a configured delay
                 time.sleep(DELAY_20_MS)
             except:
                 print("[Error] Transmission error")
@@ -113,8 +131,19 @@ class Node:
             try:
                 received = self.nodebus.recv(1.0)  # timeout = 1s
                 if received:
-                    self.consoleprint(f"Received: {received}")
+                    # Start Measurement
+                    decryptiontime = 0
+                    decryptionstarttime = time.perf_counter()
                     decrypteddata = perform_decryption(received.data)
+                    # End Measurement
+                    decryptionendtime = time.perf_counter()
+
+                    #Time taken for decryption
+                    decryptiontime = (decryptionendtime - decryptionstarttime) * us_DURATION
+
+                    print("Receiver: Data after Decryption:   " + str(list(decrypteddata)))
+
+                    self.consoleprint(f"Received: {received}    t_decrypt: {decryptiontime:.3f} us")
             except:
                 print("[Error] Reception error")
 
@@ -127,7 +156,8 @@ class CanBus:
     def __init__(self, busname):
         self.busname = busname
         # Create Virtual CAN Bus
-        self.bus = can.interface.Bus(busname, bustype='socketcan', bitrate=250000)
+        self.bus = can.interface.Bus(busname, bustype='socketcan', bitrate=250000,
+                                      preserve_timestamps=True)
         self.nodes : List[Node] = []
         
 # Represents a CAN Simulation
@@ -176,10 +206,7 @@ class CanSim:
         ):
             pass
 
-        # # Once all the nodes are released, then close the CAN bus interface
-        # print("Releasing the CAN bus Interface - " + self.CanbusList[0].busname)
-        # self.CanbusList[0].bus.shutdown()
-     
+
 ################################################################################
 # Functions
 ################################################################################
