@@ -39,7 +39,7 @@ DELAY_20_MS = 20/1000
 ################################################################################
 
 # Global variable to indicate the CAN simulation state.
-# Simulation will be stopped, once the state becomes False
+# Simulation will stop, once the state becomes False
 simulationstate = False
 
 
@@ -64,7 +64,7 @@ class Node:
 
     # Function to create thread for the Node
     def createthread(self):
-        # Create thread based on sender or Receiver
+        # Create thread based on node type
         try:
             if self.nodetype == NODE_SENDER:
                 self.thread = threading.Thread(target=self.action_sender, args=())
@@ -73,10 +73,10 @@ class Node:
         except:
             print("[Error] Unable to create thread")
         
-        #Start the Thread
+        #Start the thread
         self.thread.start()
 
-    # Function for actions to be performed by the Sender
+    # Function for actions to be performed by the sender
     def action_sender(self):
         global simulationstate
         print("Sender Node: " + self.nodename +  " Initiated")
@@ -91,9 +91,9 @@ class Node:
                 # Start Measurement
                 encryptiontime = 0
                 encryptionstarttime = time.perf_counter()
-                #Perform Encryption
+                # Perform Encryption
                 encrypteddata = perform_encryption(data)
-                # Start Measurement
+                # Stop Measurement
                 encryptionendtime = time.perf_counter()
 
                 #Time taken for encryption
@@ -113,7 +113,7 @@ class Node:
                 
                 self.consoleprint(f"Sent: {msg} t_encrypt: {encryptiontime:.3f} us")
 
-                # Send the message with a configured delay
+                # to send the message with a configured delay
                 time.sleep(DELAY_20_MS)
             except:
                 print("[Error] Transmission error")
@@ -172,7 +172,7 @@ class CanSim:
         objcanbus_1 = CanBus("vcan0")
         objcanbus_2 = CanBus("vcan0")
 
-        #Add to the BusList
+        #Add Canbus to the Simulation BusList
         self.CanbusList.append(objcanbus_1)
         self.CanbusList.append(objcanbus_2)
 

@@ -2,7 +2,7 @@
 This module provides utility functions for RC4 encryption algorithm.
 
 It includes :
-    * Functions for Encrypting and decrypting using RC4 cipher
+    * Functions for encrypting and decrypting data using RC4 cipher
 
 """
 ################################################################################
@@ -15,6 +15,7 @@ import time
 ################################################################################
 # Macros
 ################################################################################
+# To represent time in 1 us
 us_DURATION = 1_000_000
 
 
@@ -59,14 +60,14 @@ class RC4:
     # For RC4 encryption
     def rc4encrypt(self, plaintext, datalen):
         ciphertext = []
-        #Call Key Scheduling algorithm
+        # call Key Scheduling algorithm
         self.keyschedulealgo()
         # generate Keystream 
         keystream = self.pseudorandomgen(datalen)
-        # Perform encryption
+        # perform encryption
         for iter in range(datalen):
             ciphertext.append(plaintext[iter] ^ keystream[iter])
-        #Return encrypted data
+        # return encrypted data
         return ciphertext
     
     # For RC4 decryption

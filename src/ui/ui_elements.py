@@ -1,9 +1,9 @@
 """
-This module define the UI and its elements.
+This module defines the UI and its elements.
 
 It includes :
     * Classes for UI
-    * Functions to be triggered based in the interaction in the bus
+    * Functions to be triggered based on the interaction in the UI
 
 """
 ################################################################################
@@ -113,22 +113,22 @@ class CANSimGUI(tb.Window):
             #Set the state to STOPPED
             self.simulation = STOPPED
             self.start_stop_btn.config(text="▶ Start Simulation", bootstyle="success")
-            #Call the start simulation callback 
+            #Call the stop simulation callback 
             self.stopsimcallback()
         #If simulation is Stopped
         elif(self.simulation == STOPPED):
             #Set the state to STARTED
             self.simulation = STARTED
             self.start_stop_btn.config(text="■ Stop Simulation", bootstyle="danger")
-            #Call the stop simulation callback
+            #Call the start simulation callback
             self.startsimcallback()
 
-    # Function for printing into the Sender Console text box
+    # Function to print into the Sender Console text box
     def printtosenderconsole(self, msg):
         self.sender_console_text.insert(tk.END, msg + "\n")
         self.sender_console_text.see(tk.END)
 
-    # Function for printing into the Receiver Console text box
+    # Function to print into the Receiver Console text box
     def printtoreceiverconsole(self, msg):
         self.recv_console_text.insert(tk.END, msg + "\n")
         self.recv_console_text.see(tk.END)

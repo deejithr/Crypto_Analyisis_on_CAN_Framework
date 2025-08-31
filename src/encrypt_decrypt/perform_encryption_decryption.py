@@ -1,8 +1,9 @@
 """
-This module provides utility functions for Encryption and Decryption.
+This module provides utility functions for encryption and decryption based on 
+the algorithm selected.
 
 It includes :
-    * Function to encrypt/decrypt
+    * Function to perform encryption/decryption of data
 
 """
 ################################################################################
@@ -35,7 +36,7 @@ g_encryption = None
 # Functions
 ################################################################################
 def perform_encryption(data):
-    #Implementation pending
+    #Implementation pending for other algorithms
     # Call encryption function depending on the algorithm
     # to get the encrypted data
     if("RC4" == g_encryptionalgo):
@@ -46,7 +47,7 @@ def perform_encryption(data):
     return data
 
 def perform_decryption(data):
-    #Implementation pending
+    #Implementation pending for other algorithms
     # Call decrytion function depending on the algorithm
     # to decrypt the data
     if("RC4" == g_encryptionalgo):
@@ -58,7 +59,7 @@ def perform_decryption(data):
 def setencryptionalgo(algorithm):
     global g_encryptionalgo, g_encryption
     
-    # Set to the global variable
+    # Set the selected algorithm to the global variable
     g_encryptionalgo = algorithm
 
     if ("RC4" == g_encryptionalgo):
