@@ -80,9 +80,9 @@ class CANSimGUI(tb.Window):
 
         #Console for Printing the logs
         console_frame = tb.Frame(self)
-        console_frame.pack(fill="x", pady=10)
+        console_frame.pack(fill=tk.X, side="top", pady=10)
         console_label = tb.Label(console_frame, text="Console", bootstyle="info", anchor = "w")
-        console_label.pack(fill=tk.X, padx=10, pady=20)
+        console_label.pack(side="left", padx=10, pady=20, anchor=tk.NW)
         self.clearlog = tb.Button(console_frame, text="Clear Log",
                                    bootstyle="dark", command=self.clearconsole)
         self.clearlog.pack(side="left", padx=10)
