@@ -35,7 +35,7 @@ class CANSimGUI(tb.Window):
     def __init__(self):
         self.startsimcallback = None
         self.stopsimcallback = None
-        super().__init__(title="CryptoAnalysis for CAN", themename="cosmo")
+        super().__init__(title="CryptoAnalysis for CAN", themename="simplex")
         self.geometry("1200x768")
 
         # Start and Stop simulation
@@ -53,19 +53,27 @@ class CANSimGUI(tb.Window):
         cryalgo_tab = tb.Frame(notebook)
         notebook.add(cryalgo_tab, text="Crypto Algorithms")
 
-        cryalgo_label = tb.Label(cryalgo_tab, text="Select Cryptographic Algorithm:", 
-                                 bootstyle="info", anchor = "w")
-        cryalgo_label.pack(fill=tk.X, padx=10, pady=20)
+        cryalgo_frame = tb.Frame(cryalgo_tab)
+        cryalgo_frame.pack(side="left", padx=10, pady=20, anchor=tk.NW)
+        cryalgo_label = tb.Label(cryalgo_frame, text="Select Cryptographic Algorithm:", 
+                                 bootstyle="info")
+        cryalgo_label.pack(side="top", padx=10, pady=20)
 
         # Radio button for selecting the algorithm
         self.selected_algo = tk.StringVar(value="None")
         self.rb_cryalgo_tab = []
         index = 0
         for algo in ["None", "RC4", "Speck", "TEA", "CMAC", "HMAC" ]:
-            self.rb_cryalgo_tab.append(tb.Radiobutton(cryalgo_tab, text=algo, variable=self.selected_algo, 
+            self.rb_cryalgo_tab.append(tb.Radiobutton(cryalgo_frame, text=algo, variable=self.selected_algo, 
                                             value=algo, bootstyle="info"))
-            self.rb_cryalgo_tab[index].pack(anchor="w", padx=20, pady = 10)
+            self.rb_cryalgo_tab[index].pack(side="top", anchor="w", padx=20, pady=5)
             index = index + 1
+        
+
+        cryalgo_descp_frame = tb.Frame(cryalgo_tab)
+        cryalgo_descp_frame.pack(fill="both",padx=10, pady=20)
+        self.algodescptext = ScrolledText(cryalgo_descp_frame, height=15, bootstyle="secondary")
+        self.algodescptext.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
         # Tab for Performance Measurements
         perf_tab = tb.Frame(notebook)
