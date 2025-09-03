@@ -11,6 +11,7 @@ It includes :
 ################################################################################
 import os, sys
 import tkinter as tk
+from tkinter import font
 from tkinter import ttk
 from ttkbootstrap.scrolled import ScrolledText
 import ttkbootstrap as tb
@@ -24,6 +25,45 @@ from CAN_Simulation.simulate import *
 #Enum for simulation start/stop
 STARTED = 0
 STOPPED = 1
+
+# Description information for each cipher
+cipherdescription = {
+    "None" : [
+        ["None\n", "heading"],
+        ["No Cipher selected\n", "default"],
+        ["Raw data Transmitted\n", "default"]
+    ],
+
+    "RC4" : [
+        ["RC4\n", "heading"],
+        ["RC4 stream cipher\n\n", "default"],
+        ["Data is encrypted using RC4 Stream cipher", "default"]
+    ],
+
+    "Speck" : [
+        ["Speck\n", "heading"],
+        ["To be implemented\n\n", "default"],
+        ["Raw data Transmitted", "default"]
+    ],
+
+    "TEA" : [
+        ["TEA\n", "heading"],
+        ["To be implemented\n\n", "default"],
+        ["Raw data Transmitted", "default"]
+    ],
+
+    "CMAC" : [
+        ["CMAC\n", "heading"],
+        ["To be implemented\n\n", "default"],
+        ["Raw data Transmitted", "default"]
+    ],
+
+    "HMAC" : [
+        ["HMAC\n", "heading"],
+        ["To be implemented\n\n", "default"],
+        ["Raw data Transmitted", "default"]
+    ],
+}
 
 
 
@@ -73,6 +113,8 @@ class CANSimGUI(tb.Window):
         cryalgo_descp_frame = tb.Frame(cryalgo_tab)
         cryalgo_descp_frame.pack(fill="both",padx=10, pady=20)
         self.algodescptext = ScrolledText(cryalgo_descp_frame, height=15, bootstyle="secondary")
+        self.algodescptext = self.cipherdescpareainit(self.algodescptext)
+        self.insertdescription("None")
         self.algodescptext.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
         # Tab for Performance Measurements
@@ -144,6 +186,30 @@ class CANSimGUI(tb.Window):
     def clearconsole(self):
         self.sender_console_text.delete("1.0", "end")
         self.recv_console_text.delete("1.0", "end")
+
+    # To initialize the font properties for the ScrolledText Area
+    def cipherdescpareainit(self, text_area):
+        # Define the fonts
+        default_font = font.nametofont("TkDefaultFont")
+        heading_font = font.Font(font=default_font)
+        heading_font.configure(weight="bold",size=20)
+        bold_font = font.Font(font=default_font)
+        bold_font.configure(weight="bold")
+
+        text_area.tag_configure("bold", font=bold_font)
+        text_area.tag_configure("heading", font=heading_font)
+
+        return text_area
+    
+    def insertdescription(self,selected):
+        # Clear the area first
+        self.algodescptext.delete("1.0", "end")
+        #Print the description
+        for eachline in cipherdescription[selected]:
+            if(eachline[1] != "default"):
+                self.algodescptext.insert(tb.END, eachline[0], eachline[1])
+            else:
+                self.algodescptext.insert(tb.END, eachline[0])
 
 
 

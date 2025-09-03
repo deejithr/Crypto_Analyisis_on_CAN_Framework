@@ -32,6 +32,9 @@ NODE_INITIALIZED = 1
 # Delay
 DELAY_20_MS = 20/1000
 
+#Loop Timeout seconds
+looptimeout = 5
+
 
 
 ################################################################################
@@ -111,7 +114,7 @@ class Node:
                 
                 self.nodebus.send(msg)
                 
-                self.consoleprint(f"Sent: {msg} t_encrypt: {encryptiontime:.3f} us")
+                self.consoleprint(f"Sent: {msg}    t_encrypt: {encryptiontime:.3f} us")
 
                 # to send the message with a configured delay
                 time.sleep(DELAY_20_MS)
@@ -200,10 +203,12 @@ class CanSim:
         simulationstate = False
 
         # Wait for the nodes to be de-initialized
-        while (
+        loopstarttime = time.time()
+        while ((
             NODE_DEINITIALIZED != self.CanbusList[0].nodes[0].nodestatus or
             NODE_DEINITIALIZED != self.CanbusList[1].nodes[0].nodestatus
-        ):
+        ) and
+        ((time.time() - loopstarttime < looptimeout))):
             pass
 
 

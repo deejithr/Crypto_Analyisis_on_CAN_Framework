@@ -42,6 +42,8 @@ def setcallbackforconsoleprint(objcansim):
 def selectencryptionalgo():
     selected = app.selected_algo.get()
     setencryptionalgo(selected)
+    # Set the description of the algorithm
+    app.insertdescription(selected)
 
 
 
