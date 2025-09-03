@@ -16,7 +16,7 @@ import time
 # Macros
 ################################################################################
 # To represent time in 1 us
-us_DURATION = 1_000_000
+us_DURATION = 1_000
 
 
 

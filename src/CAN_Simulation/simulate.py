@@ -45,6 +45,10 @@ looptimeout = 5
 # Simulation will stop, once the state becomes False
 simulationstate = False
 
+#Global variables for collecting the encrypt and decrypt time samples
+encrypt_samples = []
+decrypt_samples = []
+
 
 
 ################################################################################
@@ -81,26 +85,29 @@ class Node:
 
     # Function for actions to be performed by the sender
     def action_sender(self):
-        global simulationstate
+        global simulationstate, encrypt_samples
         print("Sender Node: " + self.nodename +  " Initiated")
         self.nodestatus = NODE_INITIALIZED
 
         #Data bytes
         data = [0xAA, 0xBB, 0xCC, 0xDD, 0XEE, 0xFF, 0x00, 0x11]
 
+        encrypt_samples = []
+
         while True == simulationstate:
             try:
                 
                 # Start Measurement
                 encryptiontime = 0
-                encryptionstarttime = time.perf_counter()
+                encryptionstarttime = time.perf_counter_ns()
                 # Perform Encryption
                 encrypteddata = perform_encryption(data)
                 # Stop Measurement
-                encryptionendtime = time.perf_counter()
+                encryptionendtime = time.perf_counter_ns()
 
                 #Time taken for encryption
-                encryptiontime = (encryptionendtime - encryptionstarttime) * us_DURATION
+                encryptiontime = (encryptionendtime - encryptionstarttime) / us_DURATION
+                encrypt_samples.append(encryptiontime)
 
                 print("Sender: Data before Encryption:  " + str(data))
                 
@@ -126,9 +133,11 @@ class Node:
         
     # Function for actions to be performed by the Receiver
     def action_receiver(self):
-        global simulationstate
+        global simulationstate, decrypt_samples
         print("Receiver Node: " + self.nodename +  " Initiated")
         self.nodestatus = NODE_INITIALIZED
+
+        decrypt_samples = []
 
         while True == simulationstate:
             try:
@@ -136,13 +145,14 @@ class Node:
                 if received:
                     # Start Measurement
                     decryptiontime = 0
-                    decryptionstarttime = time.perf_counter()
+                    decryptionstarttime = time.perf_counter_ns()
                     decrypteddata = perform_decryption(received.data)
                     # End Measurement
-                    decryptionendtime = time.perf_counter()
+                    decryptionendtime = time.perf_counter_ns()
 
                     #Time taken for decryption
-                    decryptiontime = (decryptionendtime - decryptionstarttime) * us_DURATION
+                    decryptiontime = (decryptionendtime - decryptionstarttime) / us_DURATION
+                    decrypt_samples.append(decryptiontime)
 
                     print("Receiver: Data after Decryption:   " + str(list(decrypteddata)))
 

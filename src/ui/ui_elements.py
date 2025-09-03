@@ -201,7 +201,9 @@ class CANSimGUI(tb.Window):
 
         return text_area
     
+    # Insert description for each Cipher
     def insertdescription(self,selected):
+        self.algodescptext.text.configure(state="normal")
         # Clear the area first
         self.algodescptext.delete("1.0", "end")
         #Print the description
@@ -210,6 +212,7 @@ class CANSimGUI(tb.Window):
                 self.algodescptext.insert(tb.END, eachline[0], eachline[1])
             else:
                 self.algodescptext.insert(tb.END, eachline[0])
+        self.algodescptext.text.configure(state="disabled")
 
 
 
