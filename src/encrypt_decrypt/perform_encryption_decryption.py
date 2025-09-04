@@ -9,6 +9,7 @@ It includes :
 ################################################################################
 # Imports
 ################################################################################
+import statistics
 from Crypto_Algorithms.RC4 import *
 
 
@@ -30,12 +31,25 @@ g_encryptionalgo = "None"
 #Encryption Class Object
 g_encryption = None
 
+#Global variables for collecting the encrypt and decrypt time samples
+encrypt_samples = {}
+decrypt_samples = {}
 
 
 ################################################################################
 # Functions
 ################################################################################
+def perf_meas_init():
+    #Initialize the samples array
+    for algo in ["None", "RC4", "Speck", "TEA", "CMAC", "HMAC" ]:
+        encrypt_samples[algo] = []
+        decrypt_samples[algo] = []
+
 def perform_encryption(data):
+    # Start Measurement
+    encryptiontime = 0
+    encryptionstarttime = time.perf_counter_ns()
+    
     #Implementation pending for other algorithms
     # Call encryption function depending on the algorithm
     # to get the encrypted data
@@ -43,10 +57,21 @@ def perform_encryption(data):
         data = g_encryption.rc4encrypt(data, len(data))
     else:
         pass
-
-    return data
+    
+    # Stop Measurement
+    encryptionendtime = time.perf_counter_ns()
+    
+    #Time taken for encryption
+    encryptiontime = (encryptionendtime - encryptionstarttime) / us_DURATION
+    encrypt_samples[g_encryptionalgo].append(encryptiontime)
+    
+    return data, encryptiontime
 
 def perform_decryption(data):
+    # Start Measurement
+    decryptiontime = 0
+    decryptionstarttime = time.perf_counter_ns()
+
     #Implementation pending for other algorithms
     # Call decrytion function depending on the algorithm
     # to decrypt the data
@@ -54,7 +79,13 @@ def perform_decryption(data):
         data = g_encryption.rc4decrypt(data, len(data))
     else:
         pass
-    return data
+    # End Measurement
+    decryptionendtime = time.perf_counter_ns()
+
+    #Time taken for decryption
+    decryptiontime = (decryptionendtime - decryptionstarttime) / us_DURATION
+    decrypt_samples[g_encryptionalgo].append(decryptiontime)
+    return data, decryptiontime
 
 def setencryptionalgo(algorithm):
     global g_encryptionalgo, g_encryption
@@ -66,3 +97,29 @@ def setencryptionalgo(algorithm):
         g_encryption = RC4(RC4_KEY, RC4_S_ARRAY_SIZE)
     else:
         pass
+    # Reset the encryption and decryption samples
+    encrypt_samples[g_encryptionalgo] = []
+    decrypt_samples[g_encryptionalgo] = []
+
+def getperfmetrics(sampletype):
+    perfmetrics = {}
+    if ("encryption_samples" == sampletype):
+        samplearray = encrypt_samples
+    elif ("decryption_samples" == sampletype):
+        samplearray = decrypt_samples
+    
+    for eachalgo, samples in samplearray.items():
+        samples.sort()
+        mean_ns = statistics.fmean(samples)
+        p95 = samples[int(0.95*len(samples))]
+        p99 = samples[int(0.99*len(samples))]
+        jitter_ns = statistics.pstdev(samples)
+
+        # Add data to the Metrics dictionary
+        perfmetrics[eachalgo] = {
+            "mean_ns" : mean_ns,
+            "p95" : p95,
+            "p99" : p99,
+            "jitter_ns" : jitter_ns,
+        }
+    return perfmetrics

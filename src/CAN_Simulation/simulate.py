@@ -45,12 +45,6 @@ looptimeout = 5
 # Simulation will stop, once the state becomes False
 simulationstate = False
 
-#Global variables for collecting the encrypt and decrypt time samples
-encrypt_samples = []
-decrypt_samples = []
-
-
-
 ################################################################################
 # Classes
 ################################################################################
@@ -92,25 +86,11 @@ class Node:
         #Data bytes
         data = [0xAA, 0xBB, 0xCC, 0xDD, 0XEE, 0xFF, 0x00, 0x11]
 
-        encrypt_samples = []
-
         while True == simulationstate:
             try:
-                
-                # Start Measurement
-                encryptiontime = 0
-                encryptionstarttime = time.perf_counter_ns()
                 # Perform Encryption
-                encrypteddata = perform_encryption(data)
-                # Stop Measurement
-                encryptionendtime = time.perf_counter_ns()
-
-                #Time taken for encryption
-                encryptiontime = (encryptionendtime - encryptionstarttime) / us_DURATION
-                encrypt_samples.append(encryptiontime)
-
+                encrypteddata, encryptiontime = perform_encryption(data)
                 print("Sender: Data before Encryption:  " + str(data))
-                
                 # Create CAN Message
                 can_msg = CANMessage(0xC0FFEE, encrypteddata, True)
 
@@ -120,7 +100,6 @@ class Node:
                     is_extended_id=can_msg.isextended)
                 
                 self.nodebus.send(msg)
-                
                 self.consoleprint(f"Sent: {msg}    t_encrypt: {encryptiontime:.3f} us")
 
                 # to send the message with a configured delay
@@ -143,19 +122,8 @@ class Node:
             try:
                 received = self.nodebus.recv(1.0)  # timeout = 1s
                 if received:
-                    # Start Measurement
-                    decryptiontime = 0
-                    decryptionstarttime = time.perf_counter_ns()
-                    decrypteddata = perform_decryption(received.data)
-                    # End Measurement
-                    decryptionendtime = time.perf_counter_ns()
-
-                    #Time taken for decryption
-                    decryptiontime = (decryptionendtime - decryptionstarttime) / us_DURATION
-                    decrypt_samples.append(decryptiontime)
-
+                    decrypteddata, decryptiontime = perform_decryption(received.data)
                     print("Receiver: Data after Decryption:   " + str(list(decrypteddata)))
-
                     self.consoleprint(f"Received: {received}    t_decrypt: {decryptiontime:.3f} us")
             except:
                 print("[Error] Reception error")

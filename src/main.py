@@ -69,6 +69,9 @@ if __name__ == "__main__":
     # Set command for crypto algorithm selection
     for eachbutton in app.rb_cryalgo_tab:
         eachbutton.config(command=selectencryptionalgo)
+    
+    #Initialize the performance metrics array
+    perf_meas_init()
 
     #Run the application
     app.mainloop()
