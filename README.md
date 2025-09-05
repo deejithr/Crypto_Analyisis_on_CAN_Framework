@@ -56,7 +56,8 @@ After the repo has been cloned, run the following command in the repo to install
     pip install -r requirements.txt
 
 ## Usage
-Before running the simulation, it must be ensured that the SocketCAN has been initialized. `Setup.sh` initializes the vcan0 interface. It is mandatory to run `Setup.sh` once before running the simulation for the first time
+Before running the simulation, it must be ensured that the SocketCAN has been initialized. `Setup.sh` initializes the vcan0 interface. It is mandatory to run `Setup.sh` once before running the simulation for the first time.
+Run the script `Run.sh` to initate the UI
 
 ## UI
 Snapshots of the UI
