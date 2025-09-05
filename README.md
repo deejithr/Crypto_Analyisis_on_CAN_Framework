@@ -68,7 +68,8 @@ Snapshots of the UI
 <img width="1203" height="806" alt="UI_3" src="https://github.com/user-attachments/assets/8f8755a6-9d0a-4106-8557-8d3a47d009e8" />
 
 ## RoadMap
-- Currenlty only RC4 encryption is implemented. Other algorithms shall be implemented going forward
+- Currently only RC4 encryption is implemented, which directly encrypts the data, and the data is decoded at the reciever side. This shall be expanded with Freshness value and MAC added
+- Other algorithms shall be implemented going forward
 - For MAC based algorithms, addition of Freshness value/counter, to provide resistance to replay attacks
 - In performance metrics. encryption and decryption times have been implemented. Other metrics like deadline miss counts, cpu and ram usage need to be implemented
   
