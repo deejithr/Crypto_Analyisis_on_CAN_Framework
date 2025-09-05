@@ -15,6 +15,11 @@ import time
 ################################################################################
 # Macros
 ################################################################################
+# Key and array size information for RC4 Algorithm
+RC4_KEY = b"2023ht65544"
+RC4_S_ARRAY_SIZE = 256
+
+
 # To represent time in 1 us
 us_DURATION = 1_000
 
@@ -23,14 +28,14 @@ us_DURATION = 1_000
 ################################################################################
 # Classes
 ################################################################################
-# Represents the RC4 Algorithm class
 class RC4:
+    '''Represents the RC4 Algorithm class'''
     def __init__(self, key, s_arraysize):
         self.s_arraysize = s_arraysize
         self.key = key
 
-    # For Keyscheduling
     def keyschedulealgo(self):
+        '''For Keyscheduling'''
         # Create S array, from 0 to s_arraysize
         self.s_array = list(range(self.s_arraysize))
         self.j = 0
@@ -41,8 +46,8 @@ class RC4:
             # keyshedalgo: swap s[self.i] and s[self.j]
             self.s_array[self.i], self.s_array[self.j] = self.s_array[self.j], self.s_array[self.i]
 
-    # For Pseudo Random Generator
     def pseudorandomgen(self, datalen):
+        '''For Pseudo Random Generator'''
         # Set i and j back to 0
         self.i = 0
         self.j = 0
@@ -57,8 +62,8 @@ class RC4:
             keystream.append(t_byte)
         return keystream
 
-    # For RC4 encryption
     def rc4encrypt(self, plaintext, datalen):
+        '''For RC4 encryption'''
         ciphertext = []
         # call Key Scheduling algorithm
         self.keyschedulealgo()
@@ -70,8 +75,8 @@ class RC4:
         # return encrypted data
         return ciphertext
     
-    # For RC4 decryption
     def rc4decrypt(self, ciphertext, datalen):
+        '''For RC4 decryption'''
         return self.rc4encrypt(ciphertext,datalen)
 
 

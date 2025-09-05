@@ -48,23 +48,23 @@ simulationstate = False
 ################################################################################
 # Classes
 ################################################################################
-# Represents a CAN Message
 class CANMessage:
+    '''Represents a CAN Message'''
     def __init__(self, canid, data, isextended):
         self.arbritration_id = canid
         self.data = data
         self.isextended = isextended
 
-# Represents node in the Communication Bus
 class Node:
+    '''Represents node in the Communication Bus'''
     def __init__(self, nodename, nodetype, bus):
         self.nodename = nodename
         self.nodetype = nodetype
         self.nodebus = bus
         self.consoleprint = None
 
-    # Function to create thread for the Node
     def createthread(self):
+        '''Function to create thread for the Node'''
         # Create thread based on node type
         try:
             if self.nodetype == NODE_SENDER:
@@ -77,8 +77,8 @@ class Node:
         #Start the thread
         self.thread.start()
 
-    # Function for actions to be performed by the sender
     def action_sender(self):
+        '''Function for actions to be performed by the sender'''
         global simulationstate, encrypt_samples
         print("Sender Node: " + self.nodename +  " Initiated")
         self.nodestatus = NODE_INITIALIZED
@@ -110,8 +110,8 @@ class Node:
         print("Sender Node: " + self.nodename +  " de-initialized")
         self.nodestatus = NODE_DEINITIALIZED
         
-    # Function for actions to be performed by the Receiver
     def action_receiver(self):
+        '''Function for actions to be performed by the Receiver'''
         global simulationstate, decrypt_samples
         print("Receiver Node: " + self.nodename +  " Initiated")
         self.nodestatus = NODE_INITIALIZED
@@ -132,22 +132,22 @@ class Node:
         self.nodestatus = NODE_DEINITIALIZED
 
 
-# Represents a CAN Communication Bus
 class CanBus:
     def __init__(self, busname):
+        '''Represents a CAN Communication Bus'''
         self.busname = busname
         # Create Virtual CAN Bus
         self.bus = can.interface.Bus(busname, bustype='socketcan', bitrate=250000,
                                       preserve_timestamps=True)
         self.nodes : List[Node] = []
         
-# Represents a CAN Simulation
 class CanSim:
+    '''Represents a CAN Simulation'''
     def __init__(self):
         self.CanbusList: List[CanBus] = []
 
-    #Function to Initialize the bus
     def initializebus(self):
+        '''Function to Initialize the bus'''
         global objcanbus_1, objcanbus_2
         # Initialize CAN Bus
         objcanbus_1 = CanBus("vcan0")
@@ -161,8 +161,8 @@ class CanSim:
         objcanbus_1.nodes.append(Node("ECU1", NODE_SENDER, objcanbus_1.bus))
         objcanbus_2.nodes.append(Node("ECU2", NODE_RECEIVER, objcanbus_2.bus))
 
-    # This function starts the simulation
     def start_simulation(self):
+        '''This function starts the simulation'''
         global simulationstate
 
         # Set the simulation State to TRUE
@@ -172,8 +172,9 @@ class CanSim:
         for eachBus in self.CanbusList:
             instantiatenodes(eachBus)
 
-    # This function stops the simulation
+    
     def stop_simulation(self):
+        '''This function stops the simulation'''
         global simulationstate
 
         # Set Simulation State to False
@@ -193,8 +194,8 @@ class CanSim:
 ################################################################################
 # Functions
 ################################################################################
-# Function to start threads for each Node in the Can bus
 def instantiatenodes(objbus):
+    '''Function to start threads for each Node in the Can bus'''
     for eachNode in objbus.nodes:
         eachNode.createthread()
 

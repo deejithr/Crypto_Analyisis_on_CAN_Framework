@@ -11,14 +11,17 @@ It includes :
 ################################################################################
 import statistics
 from Crypto_Algorithms.RC4 import *
+import numpy as np
 
 
 
 ################################################################################
 # Macros
 ################################################################################
-RC4_KEY = b"2023ht65544"
-RC4_S_ARRAY_SIZE = 256
+# cpu frequency for calculating the cpu cycles required per byte
+# this value has been fetched from cpuinfo file in process
+#cat /proc/cpuinfo | grep "MHz"
+CPU_FREQ_MHZ = 2592.008
 
 
 
@@ -40,12 +43,16 @@ decrypt_samples = {}
 # Functions
 ################################################################################
 def perf_meas_init():
+    '''Initializes the sample arrays for capturing the time samples'''
+    global encrypt_samples, decrypt_samples
     #Initialize the samples array
     for algo in ["None", "RC4", "Speck", "TEA", "CMAC", "HMAC" ]:
         encrypt_samples[algo] = []
         decrypt_samples[algo] = []
 
 def perform_encryption(data):
+    ''' Perfrom encryption using the selected Algorithm'''
+    global encrypt_samples
     # Start Measurement
     encryptiontime = 0
     encryptionstarttime = time.perf_counter_ns()
@@ -68,6 +75,8 @@ def perform_encryption(data):
     return data, encryptiontime
 
 def perform_decryption(data):
+    '''Perform Decryption using the selected Algorithm'''
+    global decrypt_samples
     # Start Measurement
     decryptiontime = 0
     decryptionstarttime = time.perf_counter_ns()
@@ -88,7 +97,9 @@ def perform_decryption(data):
     return data, decryptiontime
 
 def setencryptionalgo(algorithm):
+    '''Callback called on selecting the encyrption algorithm'''
     global g_encryptionalgo, g_encryption
+    global encrypt_samples, decrypt_samples
     
     # Set the selected algorithm to the global variable
     g_encryptionalgo = algorithm
@@ -102,6 +113,8 @@ def setencryptionalgo(algorithm):
     decrypt_samples[g_encryptionalgo] = []
 
 def getperfmetrics(sampletype):
+    '''Called after simulation stopped to get the Performance metrics for each algorithm'''
+    global encrypt_samples, decrypt_samples
     perfmetrics = {}
     if ("encryption_samples" == sampletype):
         samplearray = encrypt_samples
@@ -109,17 +122,20 @@ def getperfmetrics(sampletype):
         samplearray = decrypt_samples
     
     for eachalgo, samples in samplearray.items():
-        samples.sort()
-        mean_ns = statistics.fmean(samples)
-        p95 = samples[int(0.95*len(samples))]
-        p99 = samples[int(0.99*len(samples))]
-        jitter_ns = statistics.pstdev(samples)
+        if(len(samples) > 0):
+            samples = np.array(samples)
+            mean_ns = statistics.fmean(samples)
+            p95 = np.percentile(samples, 95)
+            p99 = np.percentile(samples, 99)
+            jitter_ns = statistics.pstdev(samples)
+            cyclesperbyte = mean_ns * CPU_FREQ_MHZ / 1000
 
-        # Add data to the Metrics dictionary
-        perfmetrics[eachalgo] = {
-            "mean_ns" : mean_ns,
-            "p95" : p95,
-            "p99" : p99,
-            "jitter_ns" : jitter_ns,
-        }
+            # Add data to the Metrics dictionary
+            perfmetrics[eachalgo] = {
+                "mean_ns" : '%.3f'%(mean_ns),
+                "p95" : '%.3f'%(p95),
+                "p99" : '%.3f'%(p99),
+                "jitter_ns" : '%.3f'%(jitter_ns),
+                "cycles/byte" : '%.3f'%(cyclesperbyte),
+            }
     return perfmetrics

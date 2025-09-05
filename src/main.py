@@ -26,9 +26,9 @@ sim = None
 ################################################################################
 # Functions
 ################################################################################    
-# This function sets the callback to be called by the simulation functions to
-# print in the console
 def setcallbackforconsoleprint(objcansim):
+    '''This function sets the callback to be called by the simulation functions to
+        print in the console'''
     for eachCanBus in objcansim.CanbusList:
         #Set callback for each Node in the Can bus
         for eachNode in eachCanBus.nodes:
@@ -37,9 +37,9 @@ def setcallbackforconsoleprint(objcansim):
                 eachNode.consoleprint = app.printtosenderconsole
             else:
                 eachNode.consoleprint = app.printtoreceiverconsole
- 
-#Function that will be called on algorithm selection               
+             
 def selectencryptionalgo():
+    '''Function that will be called on algorithm selection'''
     selected = app.selected_algo.get()
     setencryptionalgo(selected)
     # Set the description of the algorithm
