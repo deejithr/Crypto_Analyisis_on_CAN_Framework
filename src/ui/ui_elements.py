@@ -38,7 +38,14 @@ cipherdescription = {
 
     "RC4" : [
         ["RC4\n", "heading"],
-        ["RC4 stream cipher\n\n", "default"],
+        ["RC4 stream cipher is a symmetric cipher that generates a pseudorandom keystream \n", "default"],
+        ["to encrypt data by XORing it with the plaintext\n\n", "default"],
+        ["It involves a ", "default"], 
+		["Key Scheduling Algorithm (KSA)", "bold"],
+		[" to permute an internal state array based \n", "default"],
+        ["on the secret key and a ", "default"],
+		["Pseudo-Random Generation Algorithm (PRGA)\n", "bold"],
+		["to produce the actual keystream.\n\n", "default"],
         ["Data is encrypted using RC4 Stream cipher", "default"]
     ],
 
@@ -115,7 +122,7 @@ class CANSimGUI(tb.Window):
 
         cryalgo_descp_frame = tb.Frame(cryalgo_tab)
         cryalgo_descp_frame.pack(fill="both",padx=10, pady=20)
-        self.algodescptext = ScrolledText(cryalgo_descp_frame, height=15, bootstyle="secondary")
+        self.algodescptext = ScrolledText(cryalgo_descp_frame, height=15, bootstyle="secondary", wrap=tk.WORD)
         self.algodescptext = self.cipherdescpareainit(self.algodescptext)
         self.insertdescription("None")
         self.algodescptext.pack(side="left", fill="both", expand=True, padx=10, pady=10)
@@ -146,9 +153,9 @@ class CANSimGUI(tb.Window):
         self.dt.pack(fill=BOTH, expand=YES, padx=10, pady=10)
         self.inserttotableview("No data available")
 
-        # Tab 3: Algorithm Comparison
+        # Tab 3: Encryption Scheme
         compare_tab = tb.Frame(notebook)
-        notebook.add(compare_tab, text="Comparison")
+        notebook.add(compare_tab, text="Encryption Scheme")
 
         #Console for Printing the logs
         console_frame = tb.Frame(self)
