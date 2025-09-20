@@ -30,7 +30,7 @@ NODE_DEINITIALIZED = 0
 NODE_INITIALIZED = 1
 
 # Delay
-DELAY_20_MS = 20/1000
+DELAY_IN_MS = 20/1000
 
 #Loop Timeout seconds
 looptimeout = 5
@@ -44,6 +44,9 @@ looptimeout = 5
 # Global variable to indicate the CAN simulation state.
 # Simulation will stop, once the state becomes False
 simulationstate = False
+
+#Global variable for CAN Message
+can_msg = None
 
 ################################################################################
 # Classes
@@ -79,31 +82,26 @@ class Node:
 
     def action_sender(self):
         '''Function for actions to be performed by the sender'''
-        global simulationstate, encrypt_samples
+        global simulationstate, encrypt_samples, can_msg, DELAY_IN_MS
         print("Sender Node: " + self.nodename +  " Initiated")
         self.nodestatus = NODE_INITIALIZED
-
-        #Data bytes
-        data = [0xAA, 0xBB, 0xCC, 0xDD, 0XEE, 0xFF, 0x00, 0x11]
 
         while True == simulationstate:
             try:
                 # Perform Encryption
-                encrypteddata, encryptiontime = perform_encryption(data)
-                print("Sender: Data before Encryption:  " + str(data))
-                # Create CAN Message
-                can_msg = CANMessage(0xC0FFEE, encrypteddata, True)
+                encrypteddata, encryptiontime = perform_encryption(can_msg.data)
+                print("Sender: Data before Encryption:  " + str(can_msg.data))
 
                 msg = can.Message(
                     arbitration_id=can_msg.arbritration_id,
-                    data=can_msg.data,
+                    data=encrypteddata,
                     is_extended_id=can_msg.isextended)
                 
                 self.nodebus.send(msg)
                 self.consoleprint(f"Sent: {msg}    t_encrypt: {encryptiontime:.3f} us")
 
                 # to send the message with a configured delay
-                time.sleep(DELAY_20_MS)
+                time.sleep(DELAY_IN_MS)
             except:
                 print("[Error] Transmission error")
 
@@ -198,6 +196,14 @@ def instantiatenodes(objbus):
     '''Function to start threads for each Node in the Can bus'''
     for eachNode in objbus.nodes:
         eachNode.createthread()
+
+def setcanmessage(canid, data, isExtended):
+    global can_msg
+    can_msg = CANMessage(canid, data, isExtended)
+
+def setmsgperiodicity(period):
+    global DELAY_IN_MS
+    DELAY_IN_MS = period/1000
 
 
 

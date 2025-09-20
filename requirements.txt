@@ -1,3 +1,4 @@
 python-can >=4.6.1
 ttkbootstrap >=1.14.2
 numpy >=2.2.6
+matplotlib>=3.8

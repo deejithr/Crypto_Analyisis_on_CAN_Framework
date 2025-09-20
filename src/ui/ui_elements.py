@@ -103,8 +103,49 @@ class CANSimGUI(tb.Window):
         cryalgo_tab = tb.Frame(notebook)
         notebook.add(cryalgo_tab, text="Crypto Algorithms")
 
+        # For CAN Message Configuration
+        canconf_frame = tb.Frame(cryalgo_tab, borderwidth=1, relief="raised")
+        canconf_frame.pack(side="left", padx=10, fill=tk.X)
+        canconf_label1 = tb.Label(canconf_frame, text="CAN Message Configuration:", 
+                                 bootstyle="info")
+        canconf_label1.pack(padx=10, pady=10)
+        
+        canconf_subframe1 = tb.Frame(canconf_frame)
+        canconf_subframe1.pack(padx=10, fill=tk.X)
+        canconf_label2 = tb.Label(canconf_subframe1, text="CAN ID            ", 
+                                 bootstyle="info")
+        canconf_label2.pack(side="left", padx=10, pady=10)
+        self.canconf_entry1 = tb.Entry(canconf_subframe1, width=40)
+        self.canconf_entry1.pack(side="left", padx=10, pady=10)
+        self.canconf_entry1.insert(0, "0xC0FFEE")
+
+        canconf_subframe2 = tb.Frame(canconf_frame)
+        canconf_subframe2.pack(side="top", padx=10, fill=tk.X)
+        canconf_label3 = tb.Label(canconf_subframe2, text="Payload           ", 
+                                 bootstyle="info")
+        canconf_label3.pack(side="left", padx=10, pady=10)
+        self.canconf_entry2 = tb.Entry(canconf_subframe2, width=40)
+        self.canconf_entry2.pack(side="left", padx=10, pady=10)
+        self.canconf_entry2.insert(0, "0xAA,0xBB,0xCC,0xDD,0XEE,0xFF,0x00,0x11")
+
+        canconf_subframe3 = tb.Frame(canconf_frame)
+        canconf_subframe3.pack(side="top", padx=10, fill=tk.X)
+        canconf_label4 = tb.Label(canconf_subframe3, text="Periodicity(ms)   ", 
+                                 bootstyle="info")
+        canconf_label4.pack(side="left", padx=10, pady=10)
+        self.canconf_entry3 = tb.Entry(canconf_subframe3,width=40)
+        self.canconf_entry3.pack(side="left", padx=10, pady=10)
+        self.canconf_entry3.insert(0, "20")
+
+        self.canconfupdate_btn = tb.Button(canconf_frame, text="Update",
+                                   bootstyle="info", command=self.do_canmsgupdate)
+        self.canconfupdate_btn.pack(anchor=tk.SE, padx=10, pady=10)
+
+        #Run updatecanmessagecallback once
+        self.do_canmsgupdate()
+
         cryalgo_frame = tb.Frame(cryalgo_tab)
-        cryalgo_frame.pack(side="left", padx=10, pady=20, anchor=tk.NW)
+        cryalgo_frame.pack(side="left", padx=10, pady=10, anchor=tk.NW)
         cryalgo_label = tb.Label(cryalgo_frame, text="Select Cryptographic Algorithm:", 
                                  bootstyle="info")
         cryalgo_label.pack(side="top", padx=10, pady=20)
@@ -131,8 +172,15 @@ class CANSimGUI(tb.Window):
         perf_tab = tb.Frame(notebook)
         notebook.add(perf_tab, text="Performance")
 
-        perf_label = tb.Label(perf_tab, text="Performance Metrics", bootstyle="info", anchor = "w")
-        perf_label.pack(fill=tk.X, padx=10, pady=20)
+        perf_tab_subframe1 = tb.Frame(perf_tab)
+        perf_tab_subframe1.pack(side="top", padx=10, fill=tk.X)
+
+        perf_label = tb.Label(perf_tab_subframe1, text="Performance Metrics", bootstyle="info", anchor = "w")
+        perf_label.pack(side="left",anchor=tk.NW, padx=10, pady=20)
+
+        self.perf_comparebtn = tb.Button(perf_tab_subframe1, text="Compare",
+                                   bootstyle="info", command=self.do_comparison)
+        self.perf_comparebtn.pack(anchor=tk.SE, padx=10, pady=10)
 
         coldata = [
         {"text": "Algorithm", "stretch": False},
@@ -273,6 +321,23 @@ class CANSimGUI(tb.Window):
                     row.append(de_perfmetrics[eachAlgo]["cycles/byte"])
                     # Append row to the table view
                     self.dt.insert_row(values=row) 
+    
+    def do_comparison(self):
+        ''' Prepares chart for data comparison '''
+        pass
+
+    def do_canmsgupdate(self):
+        ''' Updates the CAN message based on new configuration '''
+        canid = int(self.canconf_entry1.get(),16)
+        data = [int(h,16) for h in self.canconf_entry2.get().split(",")]
+        periodicity = int(self.canconf_entry3.get())
+
+        # Input validation logic to be added
+
+        # Set the CAn message and periodicity
+        setcanmessage(canid, data, True)
+        setmsgperiodicity(periodicity)
+
 
         
 
