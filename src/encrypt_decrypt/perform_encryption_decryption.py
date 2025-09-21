@@ -10,7 +10,9 @@ It includes :
 # Imports
 ################################################################################
 import statistics
+import time
 from Crypto_Algorithms.RC4 import *
+from Crypto_Algorithms.SPECK import *
 import numpy as np
 
 
@@ -62,6 +64,8 @@ def perform_encryption(data):
     # to get the encrypted data
     if("RC4" == g_encryptionalgo):
         data = g_encryption.rc4encrypt(data, len(data))
+    elif("Speck" == g_encryptionalgo):
+        data = g_encryption.speckencrypt(data)
     else:
         pass
     
@@ -86,6 +90,8 @@ def perform_decryption(data):
     # to decrypt the data
     if("RC4" == g_encryptionalgo):
         data = g_encryption.rc4decrypt(data, len(data))
+    elif("Speck" == g_encryptionalgo):
+        data = g_encryption.speckdecrypt(data)
     else:
         pass
     # End Measurement
@@ -106,6 +112,8 @@ def setencryptionalgo(algorithm):
 
     if ("RC4" == g_encryptionalgo):
         g_encryption = RC4(RC4_KEY, RC4_S_ARRAY_SIZE)
+    elif ("Speck" == g_encryptionalgo):
+        g_encryption = SPECK(SPECK_KEY)
     else:
         pass
     # Reset the encryption and decryption samples

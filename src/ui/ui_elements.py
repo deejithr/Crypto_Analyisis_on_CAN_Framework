@@ -130,7 +130,7 @@ class CANSimGUI(tb.Window):
 
         canconf_subframe3 = tb.Frame(canconf_frame)
         canconf_subframe3.pack(side="top", padx=10, fill=tk.X)
-        canconf_label4 = tb.Label(canconf_subframe3, text="Periodicity(ms)   ", 
+        canconf_label4 = tb.Label(canconf_subframe3, text="Periodicity(ms)", 
                                  bootstyle="info")
         canconf_label4.pack(side="left", padx=10, pady=10)
         self.canconf_entry3 = tb.Entry(canconf_subframe3,width=40)
@@ -144,11 +144,13 @@ class CANSimGUI(tb.Window):
         #Run updatecanmessagecallback once
         self.do_canmsgupdate()
 
-        cryalgo_frame = tb.Frame(cryalgo_tab)
+        cryalgo_mainframe = tb.Frame(cryalgo_tab, borderwidth=1, relief="raised")
+        cryalgo_mainframe.pack(side="left", padx=10, pady=10, anchor=tk.NW)
+        cryalgo_frame = tb.Frame(cryalgo_mainframe)
         cryalgo_frame.pack(side="left", padx=10, pady=10, anchor=tk.NW)
         cryalgo_label = tb.Label(cryalgo_frame, text="Select Cryptographic Algorithm:", 
                                  bootstyle="info")
-        cryalgo_label.pack(side="top", padx=10, pady=20)
+        cryalgo_label.pack(side="top", padx=10, pady=10)
 
         # Radio button for selecting the algorithm
         self.selected_algo = tk.StringVar(value="None")
@@ -161,7 +163,7 @@ class CANSimGUI(tb.Window):
             index = index + 1
         
 
-        cryalgo_descp_frame = tb.Frame(cryalgo_tab)
+        cryalgo_descp_frame = tb.Frame(cryalgo_mainframe)
         cryalgo_descp_frame.pack(fill="both",padx=10, pady=20)
         self.algodescptext = ScrolledText(cryalgo_descp_frame, height=15, bootstyle="secondary", wrap=tk.WORD)
         self.algodescptext = self.cipherdescpareainit(self.algodescptext)
@@ -179,16 +181,17 @@ class CANSimGUI(tb.Window):
         perf_label.pack(side="left",anchor=tk.NW, padx=10, pady=20)
 
         self.perf_comparebtn = tb.Button(perf_tab_subframe1, text="Compare",
-                                   bootstyle="info", command=self.do_comparison)
+                                   bootstyle="danger", command=self.do_comparison)
         self.perf_comparebtn.pack(anchor=tk.SE, padx=10, pady=10)
 
         coldata = [
-        {"text": "Algorithm", "stretch": False},
+        {"text": "Algorithm", "stretch": True},
         "enc_Mean (us)",
         "enc_p95 (us)",
         "dec_Mean (us)",
         "dec_p95 (us)",
-        "cpu_cycles/byte",
+        "enc cpu_cycles/byte",
+        "dec cpu_cycles/byte",
         ]
 
         self.dt = Tableview(
@@ -196,6 +199,7 @@ class CANSimGUI(tb.Window):
         coldata=coldata,
         paginated=True,
         bootstyle="info",
+        autofit=True,
         stripecolor=(super().style.colors.light, None)
         )
         self.dt.pack(fill=BOTH, expand=YES, padx=10, pady=10)
@@ -318,6 +322,7 @@ class CANSimGUI(tb.Window):
                     row.append(en_perfmetrics[eachAlgo]["p95"])
                     row.append(de_perfmetrics[eachAlgo]["mean_ns"])
                     row.append(de_perfmetrics[eachAlgo]["p95"])
+                    row.append(en_perfmetrics[eachAlgo]["cycles/byte"])
                     row.append(de_perfmetrics[eachAlgo]["cycles/byte"])
                     # Append row to the table view
                     self.dt.insert_row(values=row) 
