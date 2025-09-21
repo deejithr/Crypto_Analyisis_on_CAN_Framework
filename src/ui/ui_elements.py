@@ -18,6 +18,7 @@ import ttkbootstrap as tb
 from CAN_Simulation.simulate import *
 from ttkbootstrap.tableview import Tableview
 from ttkbootstrap.constants import *
+import matplotlib.pyplot as plt
 
 
 
@@ -75,7 +76,12 @@ cipherdescription = {
     ],
 }
 
-
+################################################################################
+# Globals
+################################################################################
+# For saving the Performance Metrics to plot
+en_perfmetrics = {}
+de_perfmetrics = {}
 
 ################################################################################
 # Classes
@@ -300,6 +306,7 @@ class CANSimGUI(tb.Window):
 
     def inserttotableview(self, text):
         '''Add contents to the Perfomance Metrics Table view'''
+        global en_perfmetrics, de_perfmetrics
         # Clear the contents first
         self.dt.delete_rows()
 
@@ -329,7 +336,33 @@ class CANSimGUI(tb.Window):
     
     def do_comparison(self):
         ''' Prepares chart for data comparison '''
-        pass
+        # Plot Encryption Performance Metrics
+        self.plot_bar("Performance Measurements - Time")
+
+    def plot_bar(self,title):
+        global en_perfmetrics, de_perfmetrics
+        # X-axis positions
+        x = np.arange(len(en_perfmetrics.keys()))
+        width = 0.10  # bar width
+        fig, ax = plt.subplots(figsize=(8, 5))
+
+        enc_mean_ns = list(float(en_perfmetrics[eachalgo]["mean_ns"]) for eachalgo in en_perfmetrics.keys())
+        enc_p95 = list(float(en_perfmetrics[eachalgo]["p95"]) for eachalgo in en_perfmetrics.keys())
+        dec_mean_ns = list(float(de_perfmetrics[eachalgo]["mean_ns"]) for eachalgo in en_perfmetrics.keys())
+        dec_p95 = list(float(de_perfmetrics[eachalgo]["p95"]) for eachalgo in en_perfmetrics.keys())
+
+        ax.bar(x - width, enc_mean_ns, width, label="enc Mean")
+        ax.bar(x, enc_p95, width, label="enc p95")
+        ax.bar(x + width, dec_mean_ns, width, label="dec Mean")
+        ax.bar(x + 2*width, dec_p95, width, label="dec p95")
+        ax.set_ylabel("Time in us")
+        ax.set_title(title)
+        ax.set_xticks(x)
+        ax.set_xticklabels(en_perfmetrics.keys())
+        ax.legend(loc='upper left') 
+        ax.grid(axis="y", linestyle="--", alpha=0.7)
+        plt.tight_layout()
+        plt.show()
 
     def do_canmsgupdate(self):
         ''' Updates the CAN message based on new configuration '''

@@ -97,6 +97,7 @@ class Node:
                     data=encrypteddata,
                     is_extended_id=can_msg.isextended)
                 
+                msg.timestamp = time.time()
                 self.nodebus.send(msg)
                 self.consoleprint(f"Sent: {msg}    t_encrypt: {encryptiontime:.3f} us")
 
