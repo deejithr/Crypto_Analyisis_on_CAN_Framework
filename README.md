@@ -12,7 +12,7 @@ The following encryption algorithms are currently selected. (TBD)
  - RC4 (Stream Cipher)
 	 - 256 byte state array
 	 - fast and lightweight, suitable for CAN and low end ECUs
- - Speck 32/64
+ - SPECK 32/64
 	 - designed for IOT devices, hence suitable for CAN usecase
 	 - faster and smaller than AES or SHA
  - Tiny Encryption Algorithm (TEA)

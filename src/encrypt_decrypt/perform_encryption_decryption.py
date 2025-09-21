@@ -48,7 +48,7 @@ def perf_meas_init():
     '''Initializes the sample arrays for capturing the time samples'''
     global encrypt_samples, decrypt_samples
     #Initialize the samples array
-    for algo in ["None", "RC4", "Speck", "TEA", "CMAC", "HMAC" ]:
+    for algo in ["None", "RC4", "SPECK", "TEA", "PRESENT", "HMAC" ]:
         encrypt_samples[algo] = []
         decrypt_samples[algo] = []
 
@@ -64,7 +64,7 @@ def perform_encryption(data):
     # to get the encrypted data
     if("RC4" == g_encryptionalgo):
         data = g_encryption.rc4encrypt(data, len(data))
-    elif("Speck" == g_encryptionalgo):
+    elif("SPECK" == g_encryptionalgo):
         data = g_encryption.speckencrypt(data)
     else:
         pass
@@ -90,7 +90,7 @@ def perform_decryption(data):
     # to decrypt the data
     if("RC4" == g_encryptionalgo):
         data = g_encryption.rc4decrypt(data, len(data))
-    elif("Speck" == g_encryptionalgo):
+    elif("SPECK" == g_encryptionalgo):
         data = g_encryption.speckdecrypt(data)
     else:
         pass
@@ -112,7 +112,7 @@ def setencryptionalgo(algorithm):
 
     if ("RC4" == g_encryptionalgo):
         g_encryption = RC4(RC4_KEY, RC4_S_ARRAY_SIZE)
-    elif ("Speck" == g_encryptionalgo):
+    elif ("SPECK" == g_encryptionalgo):
         g_encryption = SPECK(SPECK_KEY)
     else:
         pass

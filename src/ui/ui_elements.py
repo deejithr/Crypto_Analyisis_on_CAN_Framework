@@ -49,8 +49,8 @@ cipherdescription = {
         ["Data is encrypted using RC4 Stream cipher", "default"]
     ],
 
-    "Speck" : [
-        ["Speck\n", "heading"],
+    "SPECK" : [
+        ["SPECK\n", "heading"],
         ["To be implemented\n\n", "default"],
         ["Raw data Transmitted", "default"]
     ],
@@ -62,8 +62,8 @@ cipherdescription = {
         ["Raw data Transmitted", "default"]
     ],
 
-    "CMAC" : [
-        ["CMAC\n", "heading"],
+    "PRESENT" : [
+        ["PRESENT\n", "heading"],
         ["To be implemented\n\n", "default"],
         ["Raw data Transmitted", "default"]
     ],
@@ -156,7 +156,7 @@ class CANSimGUI(tb.Window):
         self.selected_algo = tk.StringVar(value="None")
         self.rb_cryalgo_tab = []
         index = 0
-        for algo in ["None", "RC4", "Speck", "TEA", "CMAC", "HMAC" ]:
+        for algo in ["None", "RC4", "SPECK", "TEA", "PRESENT", "HMAC" ]:
             self.rb_cryalgo_tab.append(tb.Radiobutton(cryalgo_frame, text=algo, variable=self.selected_algo, 
                                             value=algo, bootstyle="info"))
             self.rb_cryalgo_tab[index].pack(side="top", anchor="w", padx=20, pady=5)
@@ -313,7 +313,7 @@ class CANSimGUI(tb.Window):
             en_perfmetrics = getperfmetrics("encryption_samples")
             de_perfmetrics = getperfmetrics("decryption_samples")
             
-            for eachAlgo in ["None", "RC4", "Speck", "TEA", "CMAC", "HMAC" ]:
+            for eachAlgo in ["None", "RC4", "SPECK", "TEA", "PRESENT", "HMAC" ]:
                 # Only if the sample data is present
                 if(eachAlgo in en_perfmetrics.keys()):
                     row = []
