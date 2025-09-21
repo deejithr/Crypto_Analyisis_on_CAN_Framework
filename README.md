@@ -19,13 +19,10 @@ The following encryption algorithms are currently selected. (TBD)
 	 - fast on smaller MCUs
 	 - included for benchmarking purposes
 	 - maybe replaced with PRESENT algorithm
- - CMAC
-	 - AES128 block cipher
-	 - smaller code size and lower cpu consumption compared to HMAC
-	 - used in AUTOSAR SecOC modules
- - HMAC
-	 - strong security
-	 - computationally intensive
+ - PRESENT
+	 - Lightweight block cipher (substitution–permutation network)
+	 - smaller code size and lower cpu consumption
+
 
 Design of the framework is done in such a way that, new algorithms can be plugged in with little to no change in the framework
 
