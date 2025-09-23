@@ -1,1 +1,1 @@
-python3 src/main.py
+taskset -c 0 python3 src/main.py

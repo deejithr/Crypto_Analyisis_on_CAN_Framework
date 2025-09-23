@@ -11,6 +11,21 @@
             "request": "launch",
             "program": "src/main.py",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Run (pinned to core 0)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "python": "/usr/bin/python3",
+            "args": [],
+            "env": {},
+            "cwd": "${workspaceFolder}",
+            "linux": {
+                "runtimeExecutable": "/usr/bin/env",
+                "args": ["taskset", "-c", "0", "python3", "src/main.py"]
         }
     ]
 }
