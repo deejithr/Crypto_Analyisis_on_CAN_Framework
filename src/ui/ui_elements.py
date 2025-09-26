@@ -218,6 +218,8 @@ class CANSimGUI(tb.Window):
         "dec_p95 (us)",
         "enc cpu_cycles/byte",
         "dec cpu_cycles/byte",
+        "enc cpu_percent",
+        "dec cpu_percent",
         ]
 
         self.dt = Tableview(
@@ -357,6 +359,8 @@ class CANSimGUI(tb.Window):
                     row.append(de_perfmetrics[eachAlgo]["p95"])
                     row.append(en_perfmetrics[eachAlgo]["cycles/byte"])
                     row.append(de_perfmetrics[eachAlgo]["cycles/byte"])
+                    row.append(en_perfmetrics[eachAlgo]["cpu_percent"])
+                    row.append(de_perfmetrics[eachAlgo]["cpu_percent"])
                     # Append row to the table view
                     self.dt.insert_row(values=row) 
     

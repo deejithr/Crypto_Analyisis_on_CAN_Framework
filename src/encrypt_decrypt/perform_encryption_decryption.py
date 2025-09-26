@@ -14,6 +14,7 @@ import time
 from Crypto_Algorithms.RC4 import *
 from Crypto_Algorithms.SPECK import *
 import numpy as np
+import psutil, os
 
 
 
@@ -44,6 +45,8 @@ g_encryption = None
 #Global variables for collecting the encrypt and decrypt time samples
 encrypt_samples = {}
 decrypt_samples = {}
+encrypt_cpuper = {}
+decrypt_cpuper = {}
 
 
 ################################################################################
@@ -51,17 +54,22 @@ decrypt_samples = {}
 ################################################################################
 def perf_meas_init():
     '''Initializes the sample arrays for capturing the time samples'''
-    global encrypt_samples, decrypt_samples
+    global encrypt_samples, decrypt_samples, encrypt_cpuper, decrypt_cpuper
     #Initialize the samples array
     for algo in ["None", "RC4", "SPECK", "TEA", "PRESENT", "HMAC" ]:
         encrypt_samples[algo] = []
         decrypt_samples[algo] = []
+        encrypt_cpuper[algo] = []
+        decrypt_cpuper[algo] = []
 
 def perform_encryption(data):
     ''' Perfrom encryption using the selected Algorithm'''
-    global encrypt_samples
+    global encrypt_samples, encrypt_cpuper
     # Start Measurement
     encryptiontime = 0
+    process = psutil.Process(os.getpid())
+    # For Cpu Percentage Calculation. Initial call of cpu_percent is for setting the baseline
+    process.cpu_percent(interval=None)
     encryptionstarttime = time.perf_counter_ns()
     
     #Implementation pending for other algorithms
@@ -76,6 +84,9 @@ def perform_encryption(data):
     
     # Stop Measurement
     encryptionendtime = time.perf_counter_ns()
+    # Get the cpu percentage
+    cpupercent_a = process.cpu_percent(interval=None)
+    encrypt_cpuper[g_encryptionalgo].append(cpupercent_a)
     
     #Time taken for encryption
     encryptiontime = (encryptionendtime - encryptionstarttime) / us_DURATION
@@ -90,11 +101,14 @@ def isMessageAccepted(data):
 
 def perform_decryption(data):
     '''Perform Decryption using the selected Algorithm'''
-    global decrypt_samples
+    global decrypt_samples, decrypt_cpuper
     accepted = DECRYPT_NOT_OK
     
     # Start Measurement
     decryptiontime = 0
+    # For Cpu Percentage Calculation. Initial call of cpu_percent is for setting the baseline
+    process = psutil.Process(os.getpid())
+    process.cpu_percent(interval=None)
     decryptionstarttime = time.perf_counter_ns()
 
     #If encryption Mechanism enabled, do decrytpion only if the message is accepted
@@ -111,6 +125,9 @@ def perform_decryption(data):
             pass
     # End Measurement
     decryptionendtime = time.perf_counter_ns()
+    # Get the CPU Percentage
+    cpupercent_a = process.cpu_percent(interval=None)
+    decrypt_cpuper[g_encryptionalgo].append(cpupercent_a)
 
     #Time taken for decryption
     decryptiontime = (decryptionendtime - decryptionstarttime) / us_DURATION
@@ -121,6 +138,7 @@ def setencryptionalgo(algorithm):
     '''Callback called on selecting the encyrption algorithm'''
     global g_encryptionalgo, g_encryption
     global encrypt_samples, decrypt_samples
+    global encrypt_cpuper, decrypt_cpuper
     
     # Set the selected algorithm to the global variable
     g_encryptionalgo = algorithm
@@ -134,17 +152,37 @@ def setencryptionalgo(algorithm):
     # Reset the encryption and decryption samples
     encrypt_samples[g_encryptionalgo] = []
     decrypt_samples[g_encryptionalgo] = []
+    # Reset the cpu percentage samples
+    encrypt_cpuper[g_encryptionalgo] = []
+    decrypt_cpuper[g_encryptionalgo] = []
 
 def getperfmetrics(sampletype):
     '''Called after simulation stopped to get the Performance metrics for each algorithm'''
     global encrypt_samples, decrypt_samples
+    global encrypt_cpuper, decrypt_cpuper
+
     perfmetrics = {}
+    # Select the array depending on the metrics needed
     if ("encryption_samples" == sampletype):
         samplearray = encrypt_samples
+        cpuperarray = encrypt_cpuper
     elif ("decryption_samples" == sampletype):
         samplearray = decrypt_samples
+        cpuperarray = decrypt_cpuper
     
+    # Reset the mean cpu percentage variable
+    mean_cpuper = {}
+    # For cpu percentage samples
+    for eachalgo, cpuper in cpuperarray.items():
+        mean_cpuper[eachalgo] = 0
+        #Only if valid samples are available
+        if(len(cpuper) > 0):
+            cpuper = np.array(cpuper)
+            mean_cpuper[eachalgo] = statistics.fmean(cpuper)
+    
+    # For encryption and decryption times
     for eachalgo, samples in samplearray.items():
+        #Only if valid samples are available
         if(len(samples) > 0):
             samples = np.array(samples)
             mean_ns = statistics.fmean(samples)
@@ -160,5 +198,6 @@ def getperfmetrics(sampletype):
                 "p99" : '%.3f'%(p99),
                 "jitter_ns" : '%.3f'%(jitter_ns),
                 "cycles/byte" : '%.3f'%(cyclesperbyte),
+                "cpu_percent" : '%.3f'%(mean_cpuper[eachalgo])
             }
     return perfmetrics

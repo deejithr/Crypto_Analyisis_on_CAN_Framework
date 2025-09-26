@@ -14,10 +14,12 @@ import struct
 ################################################################################
 # Macros
 ################################################################################
-SPECK_BLOCK_SIZE = 64
-SPECK_KEY = b"2023ht6554400000" # 128 bit (16bytes) Key
-SPECK_KEY_SIZE = 128
+# 128 bit (16bytes) Key
+SPECK_KEY = b"2023ht6554400000" 
 
+#SPECK Parameters
+SPECK_BLOCK_SIZE = 64
+SPECK_KEY_SIZE = 128
 # No of rounds for SPECK 64/128 
 SPECK_ROUNDS = 27
 SPECK_MOD = 2**int(SPECK_BLOCK_SIZE/2)
@@ -35,9 +37,12 @@ class SPECK:
     def keyexpansion(self):
         '''For Key expansion to generate keys for the rounds'''
         # Split the key into four 32-bit words
-        key_words = list(struct.unpack("<4I", self.key))  # unpacking the key into four 32bit words in
-                                                        #little endian manner. < - Little Endian,
-                                                        # 4- parts, I- 32bitIntegers
+
+        # unpacking the key into four 32bit words in
+        #little endian manner. < - Little Endian,
+        # 4- parts, I- 32bitIntegers
+        key_words = list(struct.unpack("<4I", self.key))
+
         #Initialize 
         round_keys = [0] * SPECK_ROUNDS
         l = [0] * 3
@@ -45,7 +50,6 @@ class SPECK:
         k = round_keys[0]
         l = key_words[1:]
         
-
         # Generate subsequent round keys
         for i in range(SPECK_ROUNDS - 1):
             x, y = speckround_f(l[i % 3], k, i)
@@ -60,9 +64,11 @@ class SPECK:
         # Convert Plaintext to bytearray
         plaintext = bytearray(plaintext)
         # Split 64-bit block into two 32-bit halves (x, y)
-        x, y = struct.unpack("<2I", plaintext) # unpacking the plaintext into two 32bit words in
-                                                #little endian manner. < - Little Endian,
-                                                # 2- parts, I- 32bitIntegers
+        
+        # unpacking the plaintext into two 32bit words in
+        #little endian manner. < - Little Endian,
+        # 2- parts, I- 32bitIntegers
+        x, y = struct.unpack("<2I", plaintext) 
 
         for k in self.roundkeys:
             x, y = speckround_f(x, y, k)

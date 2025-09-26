@@ -85,6 +85,11 @@ class Node:
         global simulationstate, encrypt_samples, can_msg, DELAY_IN_MS
         print("Sender Node: " + self.nodename +  " Initiated")
         self.nodestatus = NODE_INITIALIZED
+        
+        # Pin the thread to Core0, otherwise Scheduler will distribute it to other cores
+        # Pin to core 0
+        pid = threading.get_native_id()
+        os.sched_setaffinity(pid, {0})
 
         while True == simulationstate:
             try:
@@ -116,6 +121,10 @@ class Node:
         self.nodestatus = NODE_INITIALIZED
 
         decrypt_samples = []
+        # Pin the thread to Core0, otherwise Scheduler will distribute it to other cores
+        # Pin to core 0
+        pid = threading.get_native_id()
+        os.sched_setaffinity(pid, {0})  
 
         while True == simulationstate:
             try:
@@ -181,7 +190,7 @@ class CanSim:
         print(f"Stopping simulation... ")
         simulationstate = False
 
-        # Wait for the nodes to be de-initialized
+        # Wait for the nodes to be de-initialized or until timeout elapsed
         loopstarttime = time.time()
         while ((
             NODE_DEINITIALIZED != self.CanbusList[0].nodes[0].nodestatus or
@@ -200,10 +209,12 @@ def instantiatenodes(objbus):
         eachNode.createthread()
 
 def setcanmessage(canid, data, isExtended):
+    '''Function sets the parameters for CAN Message'''
     global can_msg
     can_msg = CANMessage(canid, data, isExtended)
 
 def setmsgperiodicity(period):
+    '''Function sets the periodicity of CAN Message'''
     global DELAY_IN_MS
     DELAY_IN_MS = period/1000
 
