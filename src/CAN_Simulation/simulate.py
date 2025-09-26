@@ -121,9 +121,10 @@ class Node:
             try:
                 received = self.nodebus.recv(1.0)  # timeout = 1s
                 if received:
-                    decrypteddata, decryptiontime = perform_decryption(received.data)
+                    # Perform Decrytpion and acceptance
+                    decrypteddata, decryptiontime, accepted = perform_decryption(received.data)
                     print("Receiver: Data after Decryption:   " + str(list(decrypteddata)))
-                    self.consoleprint(f"Received: {received}    t_decrypt: {decryptiontime:.3f} us")
+                    self.consoleprint(f"Received: {received}    t_decrypt: {decryptiontime:.3f} us", accepted)
             except:
                 print("[Error] Reception error")
 

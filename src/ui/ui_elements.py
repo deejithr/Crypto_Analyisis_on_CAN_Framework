@@ -51,9 +51,29 @@ cipherdescription = {
     ],
 
     "SPECK" : [
-        ["SPECK\n", "heading"],
-        ["To be implemented\n\n", "default"],
-        ["Raw data Transmitted", "default"]
+        ["SPECK", "heading"],
+        ["\nSPECK 64/128 is a lightweight block cipher ", "default"],
+        ["\n  -  designed by the U.S. National Security Agency (NSA) for software implementations on resource-constrained devices, specifically IOT devices.", "default"],
+        ["\n  -  \"64/128\" in its name indicates that it uses a 64-bit block size and a 128-bit key size.", "default"],
+        ["\n\nSPECK 64/128 is an ARX cipher, which means its round function uses only three operations:", "default"],
+        ["\n  - Addition: Modular addition", "default"],
+        ["\n  - Rotation: Circular shifts (or rotations) of a fixed number of bits", "default"],
+        ["\n  - XOR: Bitwise exclusive OR", "default"],
+        ["\n\nInitial state:", "bold"],
+        ["\nThe 64-bit plaintext block is split into two 32-bit words, typically x and y.The 128-bit master key is used to generate a sequence of round keys. For SPECK 64/128, this process uses 27 rounds", "default"],
+        ["\n\nRound function:", "bold"],
+        ["\nIn each round, the two data words are updated using the following steps:", "default"],
+        ["\n  - Rotation and addition: ", "bold"],
+        ["\n    The x word is rotated right by 8 bits, then added to the y word modulo 2^32.", "default"],
+        ["\n  - XOR with round key: ", "bold"],
+        ["\n    The result is XORed with the current round key.", "default"],
+        ["\n  - Rotation and XOR: ", "bold"],
+        ["\n    The y word is rotated left by 3 bits, then XORed with the new x word.", "default"],
+        ["\n  - Update words: ", "bold"],
+        ["\n    The newly computed values become the inputs for the next round", "default"],
+        ["\n\nDecryption:", "bold"],
+        ["\nThe decryption process is a simple reversal of the encryption steps. ", "default"],
+        ["\nBy performing the inverse of each operation the plaintext can be recovered.", "default"]
     ],
 
     "TEA" : [
@@ -239,6 +259,8 @@ class CANSimGUI(tb.Window):
         notebook_console.add(receiver_tab, text="Receiver")
         self.recv_console_text = ScrolledText(receiver_tab, height=15, bootstyle="secondary")
         self.recv_console_text.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+        self.recv_console_text.tag_config("green_bold", foreground="green", font=("Arial", 10, "bold"))
+        self.recv_console_text.tag_config("red_bold", foreground="red", font=("Arial", 10, "bold"))
 
         # Set simulation state to STOPPED, initially
         self.simulation = STOPPED
@@ -264,12 +286,16 @@ class CANSimGUI(tb.Window):
 
     def printtosenderconsole(self, msg):
         '''Function to print into the Sender Console text box'''
-        self.sender_console_text.insert(tk.END, msg + "\n")
+        self.sender_console_text.insert(tk.END, "\n" + msg )
         self.sender_console_text.see(tk.END)
 
-    def printtoreceiverconsole(self, msg):
+    def printtoreceiverconsole(self, msg , accepted):
         '''Function to print into the Receiver Console text box'''
-        self.recv_console_text.insert(tk.END, msg + "\n")
+        self.recv_console_text.insert(tk.END, "\n" + msg)
+        if (DECRYPT_OK == accepted):
+            self.recv_console_text.insert(tk.END, "  ✅", "green_bold")
+        else:
+            self.recv_console_text.insert(tk.END, "  ❌", "red_bold")
         self.recv_console_text.see(tk.END)
 
     def clearconsole(self):

@@ -25,6 +25,11 @@ import numpy as np
 #cat /proc/cpuinfo | grep "MHz"
 CPU_FREQ_MHZ = 2592.008
 
+# Enums for Can message accepted or not
+DECRYPT_OK = 0
+DECRYPT_NOT_OK = 1
+
+
 
 
 ################################################################################
@@ -78,29 +83,39 @@ def perform_encryption(data):
     
     return data, encryptiontime
 
+def isMessageAccepted(data):
+    # Implmentation Pending
+    return DECRYPT_OK
+
+
 def perform_decryption(data):
     '''Perform Decryption using the selected Algorithm'''
     global decrypt_samples
+    accepted = DECRYPT_NOT_OK
+    
     # Start Measurement
     decryptiontime = 0
     decryptionstarttime = time.perf_counter_ns()
 
-    #Implementation pending for other algorithms
-    # Call decrytion function depending on the algorithm
-    # to decrypt the data
-    if("RC4" == g_encryptionalgo):
-        data = g_encryption.rc4decrypt(data, len(data))
-    elif("SPECK" == g_encryptionalgo):
-        data = g_encryption.speckdecrypt(data)
-    else:
-        pass
+    #If encryption Mechanism enabled, do decrytpion only if the message is accepted
+    if(DECRYPT_OK == isMessageAccepted(data)):
+        accepted = DECRYPT_OK
+        #Implementation pending for other algorithms
+        # Call decrytion function depending on the algorithm
+        # to decrypt the data
+        if("RC4" == g_encryptionalgo):
+            data = g_encryption.rc4decrypt(data, len(data))
+        elif("SPECK" == g_encryptionalgo):
+            data = g_encryption.speckdecrypt(data)
+        else:
+            pass
     # End Measurement
     decryptionendtime = time.perf_counter_ns()
 
     #Time taken for decryption
     decryptiontime = (decryptionendtime - decryptionstarttime) / us_DURATION
     decrypt_samples[g_encryptionalgo].append(decryptiontime)
-    return data, decryptiontime
+    return data, decryptiontime, accepted
 
 def setencryptionalgo(algorithm):
     '''Callback called on selecting the encyrption algorithm'''
