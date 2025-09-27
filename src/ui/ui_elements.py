@@ -373,30 +373,74 @@ class CANSimGUI(tb.Window):
     def do_comparison(self):
         ''' Prepares chart for data comparison '''
         # Plot Encryption Performance Metrics
-        self.plot_bar("Performance Measurements - Time")
+        self.plot_bar()
 
-    def plot_bar(self,title):
-        global en_perfmetrics, de_perfmetrics
+    def plot_bar(self):
+        global en_perfmetrics, de_perfmetrics, deadlinemiss
         # X-axis positions
         x = np.arange(len(en_perfmetrics.keys()))
-        width = 0.10  # bar width
-        fig, ax = plt.subplots(figsize=(8, 5))
+        width = 0.15  # bar width
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2, figsize=(10, 8))
 
+        # For Performance Measurements Bar Plot
+        title1 = "Performance Measurements - Time"
         enc_mean_ns = list(float(en_perfmetrics[eachalgo]["mean_ns"]) for eachalgo in en_perfmetrics.keys())
         enc_p95 = list(float(en_perfmetrics[eachalgo]["p95"]) for eachalgo in en_perfmetrics.keys())
         dec_mean_ns = list(float(de_perfmetrics[eachalgo]["mean_ns"]) for eachalgo in en_perfmetrics.keys())
         dec_p95 = list(float(de_perfmetrics[eachalgo]["p95"]) for eachalgo in en_perfmetrics.keys())
 
-        ax.bar(x - width, enc_mean_ns, width, label="enc Mean")
-        ax.bar(x, enc_p95, width, label="enc p95")
-        ax.bar(x + width, dec_mean_ns, width, label="dec Mean")
-        ax.bar(x + 2*width, dec_p95, width, label="dec p95")
-        ax.set_ylabel("Time in us")
-        ax.set_title(title)
-        ax.set_xticks(x)
-        ax.set_xticklabels(en_perfmetrics.keys())
-        ax.legend(loc='upper left') 
-        ax.grid(axis="y", linestyle="--", alpha=0.7)
+        ax1_bars1 = ax1.bar(x - width, enc_mean_ns, width, label="enc Mean")
+        ax1_bars2 = ax1.bar(x, enc_p95, width, label="enc p95")
+        ax1_bars3 = ax1.bar(x + width, dec_mean_ns, width, label="dec Mean")
+        ax1_bars4 = ax1.bar(x + 2*width, dec_p95, width, label="dec p95")
+        
+        ax1.set_ylabel("Time in us")
+        ax1.set_title(title1)
+        ax1.set_xticks(x)
+        ax1.set_xticklabels(en_perfmetrics.keys())
+        ax1.legend(loc='upper left') 
+        ax1.grid(axis="y", linestyle="--", alpha=0.7)
+
+        ax1.bar_label(ax1_bars1, padding=2)
+        ax1.bar_label(ax1_bars2, padding=4)
+        ax1.bar_label(ax1_bars3, padding=6)
+        ax1.bar_label(ax1_bars4, padding=2)
+
+        # For Cycles per Bytes Bar Plot
+        title2 = "Cycles per byte"
+        enc_cyclesperb = list(float(en_perfmetrics[eachalgo]["cycles/byte"]) for eachalgo in en_perfmetrics.keys())
+        dec_cyclesperb = list(float(de_perfmetrics[eachalgo]["cycles/byte"]) for eachalgo in en_perfmetrics.keys())
+
+        ax2_bars1 = ax2.bar(x - width, enc_cyclesperb, width, label="enc cycles/bytes")
+        ax2_bars2 = ax2.bar(x, dec_cyclesperb, width, label="dec cycles/bytes")
+
+        ax2.set_ylabel("cycles/byte")
+        ax2.set_title(title2)
+        ax2.set_xticks(x)
+        ax2.set_xticklabels(en_perfmetrics.keys())
+        ax2.legend(loc='upper left') 
+        ax2.grid(axis="y", linestyle="--", alpha=0.7)
+
+        ax2.bar_label(ax2_bars1, padding=2)
+        ax2.bar_label(ax2_bars2, padding=4)
+
+        # For Deadline miss counts
+        title3 = f"Deadline Miss counts at {self.canconf_entry3.get()}ms periodicity"
+        enc_deadlinemisscounts = list(float(deadlinemiss[eachalgo]) for eachalgo in deadlinemiss.keys())
+
+        ax3_bars1 = ax3.bar(x, enc_deadlinemisscounts, width, label="Deadline Miss counts")
+
+        ax3.set_ylabel("counts")
+        ax3.set_title(title3)
+        ax3.set_xticks(x)
+        ax3.set_xticklabels(deadlinemiss.keys())
+        ax3.legend(loc='upper left') 
+        ax3.grid(axis="y", linestyle="--", alpha=0.7)
+
+        ax3.bar_label(ax3_bars1, padding=2)
+
+        ax4.axis('off')
+        
         plt.tight_layout()
         plt.show()
 
