@@ -69,7 +69,7 @@ def perform_encryption(data):
     encryptiontime = 0
     process = psutil.Process(os.getpid())
     # For Cpu Percentage Calculation. Initial call of cpu_percent is for setting the baseline
-    process.cpu_percent(interval=None)
+    cpupercent_b = process.cpu_percent(interval=None)
     encryptionstarttime = time.perf_counter_ns()
     
     #Implementation pending for other algorithms
@@ -86,7 +86,7 @@ def perform_encryption(data):
     encryptionendtime = time.perf_counter_ns()
     # Get the cpu percentage
     cpupercent_a = process.cpu_percent(interval=None)
-    encrypt_cpuper[g_encryptionalgo].append(cpupercent_a)
+    encrypt_cpuper[g_encryptionalgo].append((cpupercent_a - cpupercent_b)/psutil.cpu_count())
     
     #Time taken for encryption
     encryptiontime = (encryptionendtime - encryptionstarttime) / us_DURATION
@@ -108,7 +108,7 @@ def perform_decryption(data):
     decryptiontime = 0
     # For Cpu Percentage Calculation. Initial call of cpu_percent is for setting the baseline
     process = psutil.Process(os.getpid())
-    process.cpu_percent(interval=None)
+    cpupercent_b =process.cpu_percent(interval=None)
     decryptionstarttime = time.perf_counter_ns()
 
     #If encryption Mechanism enabled, do decrytpion only if the message is accepted
@@ -127,7 +127,7 @@ def perform_decryption(data):
     decryptionendtime = time.perf_counter_ns()
     # Get the CPU Percentage
     cpupercent_a = process.cpu_percent(interval=None)
-    decrypt_cpuper[g_encryptionalgo].append(cpupercent_a)
+    decrypt_cpuper[g_encryptionalgo].append((cpupercent_a - cpupercent_b)/psutil.cpu_count())
 
     #Time taken for decryption
     decryptiontime = (decryptionendtime - decryptionstarttime) / us_DURATION

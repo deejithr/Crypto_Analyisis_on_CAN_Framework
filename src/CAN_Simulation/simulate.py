@@ -30,7 +30,7 @@ NODE_DEINITIALIZED = 0
 NODE_INITIALIZED = 1
 
 # Delay
-DELAY_IN_MS = 20/1000
+DELAY_IN_S = 20/1000
 
 #Loop Timeout seconds
 looptimeout = 5
@@ -82,7 +82,7 @@ class Node:
 
     def action_sender(self):
         '''Function for actions to be performed by the sender'''
-        global simulationstate, encrypt_samples, can_msg, DELAY_IN_MS
+        global simulationstate, encrypt_samples, can_msg, DELAY_IN_S
         print("Sender Node: " + self.nodename +  " Initiated")
         self.nodestatus = NODE_INITIALIZED
         
@@ -107,7 +107,7 @@ class Node:
                 self.consoleprint(f"Sent: {msg}    t_encrypt: {encryptiontime:.3f} us")
 
                 # to send the message with a configured delay
-                time.sleep(DELAY_IN_MS)
+                time.sleep(DELAY_IN_S)
             except:
                 print("[Error] Transmission error")
 
@@ -215,8 +215,8 @@ def setcanmessage(canid, data, isExtended):
 
 def setmsgperiodicity(period):
     '''Function sets the periodicity of CAN Message'''
-    global DELAY_IN_MS
-    DELAY_IN_MS = period/1000
+    global DELAY_IN_S
+    DELAY_IN_S = period/1000
 
 
 
