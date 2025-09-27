@@ -212,14 +212,14 @@ class CANSimGUI(tb.Window):
 
         coldata = [
         {"text": "Algorithm", "stretch": True},
-        "enc_Mean (us)",
-        "enc_p95 (us)",
-        "dec_Mean (us)",
-        "dec_p95 (us)",
-        "enc cpu_cycles/byte",
-        "dec cpu_cycles/byte",
-        "enc cpu_percent",
-        "dec cpu_percent",
+        {"text":"enc_Mean (us)", "stretch": True},
+        {"text":"enc_p95 (us)", "stretch": True},
+        {"text":"dec_Mean (us)", "stretch": True},
+        {"text":"dec_p95 (us)", "stretch": True},
+        {"text": "enc cycles/byte", "stretch": True},
+        {"text": "dec cycles/byte", "stretch": True},
+        {"text": "enc cpu %", "stretch": True},
+        {"text": "dec cpu %", "stretch": True}
         ]
 
         self.dt = Tableview(
@@ -228,6 +228,7 @@ class CANSimGUI(tb.Window):
         paginated=True,
         bootstyle="info",
         autofit=True,
+        autoalign=True,
         stripecolor=(super().style.colors.light, None)
         )
         self.dt.pack(fill=BOTH, expand=YES, padx=10, pady=10)
