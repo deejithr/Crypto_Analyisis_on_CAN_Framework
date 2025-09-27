@@ -102,6 +102,8 @@ cipherdescription = {
 # For saving the Performance Metrics to plot
 en_perfmetrics = {}
 de_perfmetrics = {}
+# For saving the deadline miss ratio
+deadlinemiss = {}
 
 ################################################################################
 # Classes
@@ -219,7 +221,8 @@ class CANSimGUI(tb.Window):
         {"text": "enc cycles/byte", "stretch": True},
         {"text": "dec cycles/byte", "stretch": True},
         {"text": "enc cpu %", "stretch": True},
-        {"text": "dec cpu %", "stretch": True}
+        {"text": "dec cpu %", "stretch": True},
+        {"text": "deadline miss ratio %", "stretch": True}
         ]
 
         self.dt = Tableview(
@@ -335,7 +338,7 @@ class CANSimGUI(tb.Window):
 
     def inserttotableview(self, text):
         '''Add contents to the Perfomance Metrics Table view'''
-        global en_perfmetrics, de_perfmetrics
+        global en_perfmetrics, de_perfmetrics, deadlinemiss
         # Clear the contents first
         self.dt.delete_rows()
 
@@ -348,6 +351,7 @@ class CANSimGUI(tb.Window):
             #Get the performance metrics for both encryption and decryption
             en_perfmetrics = getperfmetrics("encryption_samples")
             de_perfmetrics = getperfmetrics("decryption_samples")
+            deadlinemiss[self.selected_algo.get()] = '%.3f'%getdeadlinemissratio()
             
             for eachAlgo in ["None", "RC4", "SPECK", "TEA", "PRESENT", "HMAC" ]:
                 # Only if the sample data is present
@@ -362,6 +366,7 @@ class CANSimGUI(tb.Window):
                     row.append(de_perfmetrics[eachAlgo]["cycles/byte"])
                     row.append(en_perfmetrics[eachAlgo]["cpu_percent"])
                     row.append(de_perfmetrics[eachAlgo]["cpu_percent"])
+                    row.append(deadlinemiss[eachAlgo])
                     # Append row to the table view
                     self.dt.insert_row(values=row) 
     

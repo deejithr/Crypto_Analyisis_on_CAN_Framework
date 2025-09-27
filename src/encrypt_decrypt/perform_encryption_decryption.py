@@ -30,8 +30,10 @@ CPU_FREQ_MHZ = 2592.008
 DECRYPT_OK = 0
 DECRYPT_NOT_OK = 1
 
-
-
+# Conversion Macros
+CONVERT_S_TO_NS = 1_000_000_000
+CONVERT_NS_TO_S = 1/ 1_000_000_000
+CONVERT_NS_TO_MS = 1/ 1_000_000
 
 ################################################################################
 # Globals

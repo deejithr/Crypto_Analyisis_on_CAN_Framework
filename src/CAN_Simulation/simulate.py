@@ -35,8 +35,6 @@ DELAY_IN_S = 20/1000
 #Loop Timeout seconds
 looptimeout = 5
 
-
-
 ################################################################################
 # Globals
 ################################################################################
@@ -47,6 +45,10 @@ simulationstate = False
 
 #Global variable for CAN Message
 can_msg = None
+
+# For deadlne miss measurements
+deadlinemisscounts = 0
+sentmessagescount = 0 
 
 ################################################################################
 # Classes
@@ -83,6 +85,8 @@ class Node:
     def action_sender(self):
         '''Function for actions to be performed by the sender'''
         global simulationstate, encrypt_samples, can_msg, DELAY_IN_S
+        global deadlinemisscounts, sentmessagescount
+
         print("Sender Node: " + self.nodename +  " Initiated")
         self.nodestatus = NODE_INITIALIZED
         
@@ -90,6 +94,8 @@ class Node:
         # Pin to core 0
         pid = threading.get_native_id()
         os.sched_setaffinity(pid, {0})
+
+        next_execution_ns = prev = time.perf_counter_ns()
 
         while True == simulationstate:
             try:
@@ -104,10 +110,29 @@ class Node:
                 
                 msg.timestamp = time.time()
                 self.nodebus.send(msg)
+                # Increment the count of sent messages
+                sentmessagescount +=1
                 self.consoleprint(f"Sent: {msg}    t_encrypt: {encryptiontime:.3f} us")
 
-                # to send the message with a configured delay
-                time.sleep(DELAY_IN_S)
+                # Get the current timestamp
+                now = time.perf_counter_ns()
+                deadline = next_execution_ns + int(DELAY_IN_S * CONVERT_S_TO_NS)
+
+                print("Duration: ", (now - prev) * CONVERT_NS_TO_MS)
+                # Update Prev with now value
+                prev = now
+
+                if now > deadline:
+                    deadlinemisscounts += 1
+
+                # Next Execution Window
+                next_execution_ns += int(DELAY_IN_S * CONVERT_S_TO_NS)
+
+                # to send the message with a configured delay, Calculate how long to sleep
+                time_to_sleep_ns = next_execution_ns - time.perf_counter_ns()
+                if time_to_sleep_ns > 0:
+                    # Provide the calculated sleep time
+                    time.sleep(time_to_sleep_ns * CONVERT_NS_TO_S)
             except:
                 print("[Error] Transmission error")
 
@@ -217,6 +242,10 @@ def setmsgperiodicity(period):
     '''Function sets the periodicity of CAN Message'''
     global DELAY_IN_S
     DELAY_IN_S = period/1000
+
+def getdeadlinemissratio():
+    global deadlinemisscounts, sentmessagescount
+    return (100 * (deadlinemisscounts)/sentmessagescount)
 
 
 
