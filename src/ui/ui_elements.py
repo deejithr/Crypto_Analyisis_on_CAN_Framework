@@ -401,10 +401,10 @@ class CANSimGUI(tb.Window):
         ax1.legend(loc='upper left') 
         ax1.grid(axis="y", linestyle="--", alpha=0.7)
 
-        ax1.bar_label(ax1_bars1, padding=2)
-        ax1.bar_label(ax1_bars2, padding=4)
-        ax1.bar_label(ax1_bars3, padding=6)
-        ax1.bar_label(ax1_bars4, padding=2)
+        ax1.bar_label(ax1_bars1, padding=5)
+        ax1.bar_label(ax1_bars2, padding=10)
+        ax1.bar_label(ax1_bars3, padding=15)
+        ax1.bar_label(ax1_bars4, padding=5)
 
         # For Cycles per Bytes Bar Plot
         title2 = "Cycles per byte"
@@ -421,8 +421,8 @@ class CANSimGUI(tb.Window):
         ax2.legend(loc='upper left') 
         ax2.grid(axis="y", linestyle="--", alpha=0.7)
 
-        ax2.bar_label(ax2_bars1, padding=2)
-        ax2.bar_label(ax2_bars2, padding=4)
+        ax2.bar_label(ax2_bars1, padding=5)
+        ax2.bar_label(ax2_bars2, padding=10)
 
         # For Deadline miss counts
         title3 = f"Deadline Miss counts at {self.canconf_entry3.get()}ms periodicity"
@@ -437,7 +437,7 @@ class CANSimGUI(tb.Window):
         ax3.legend(loc='upper left') 
         ax3.grid(axis="y", linestyle="--", alpha=0.7)
 
-        ax3.bar_label(ax3_bars1, padding=2)
+        ax3.bar_label(ax3_bars1, padding=5)
 
         ax4.axis('off')
         

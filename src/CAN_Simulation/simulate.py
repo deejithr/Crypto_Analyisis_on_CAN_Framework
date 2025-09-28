@@ -33,7 +33,7 @@ NODE_INITIALIZED = 1
 DELAY_IN_S = 20/1000
 
 #Loop Timeout seconds
-looptimeout = 5
+looptimeout = 2
 
 ################################################################################
 # Globals
@@ -95,6 +95,10 @@ class Node:
         pid = threading.get_native_id()
         os.sched_setaffinity(pid, {0})
 
+        #For deadlinemiss counts
+        deadlinemisscounts = 0
+        sentmessagescount = 0
+
         next_execution_ns = prev = time.perf_counter_ns()
 
         while True == simulationstate:
@@ -118,19 +122,21 @@ class Node:
                 now = time.perf_counter_ns()
                 deadline = next_execution_ns + int(DELAY_IN_S * CONVERT_S_TO_NS)
 
-                print("Duration: ", (now - prev) * CONVERT_NS_TO_MS)
+                print("Period: ", (now - prev) * CONVERT_NS_TO_MS)
                 # Update Prev with now value
                 prev = now
 
                 if now > deadline:
                     deadlinemisscounts += 1
+                    print("Deadline missed : ", deadlinemisscounts)
 
                 # Next Execution Window
                 next_execution_ns += int(DELAY_IN_S * CONVERT_S_TO_NS)
 
-                # to send the message with a configured delay, Calculate how long to sleep
+                # to send the message with the configured delay, Calculate how long to sleep
                 time_to_sleep_ns = next_execution_ns - time.perf_counter_ns()
                 if time_to_sleep_ns > 0:
+                    print("Sleep time: " ,  time_to_sleep_ns * CONVERT_NS_TO_MS)
                     # Provide the calculated sleep time
                     time.sleep(time_to_sleep_ns * CONVERT_NS_TO_S)
             except:
