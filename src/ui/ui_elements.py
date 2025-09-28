@@ -416,7 +416,7 @@ class CANSimGUI(tb.Window):
         ax2.set_title(title2)
         ax2.set_xticks(x)
         ax2.set_xticklabels(en_perfmetrics.keys())
-        ax2.legend(loc='upper left') 
+        ax2.legend(loc='upper left', ncols=2) 
         ax2.grid(axis="y", linestyle="--", alpha=0.7)
 
         ax2.bar_label(ax2_bars1, padding=5)

@@ -13,6 +13,7 @@ import statistics
 import time
 from Crypto_Algorithms.RC4 import *
 from Crypto_Algorithms.SPECK import *
+from Crypto_Algorithms.PRESENT import *
 import numpy as np
 import psutil, os
 
@@ -81,6 +82,8 @@ def perform_encryption(data):
         data = g_encryption.rc4encrypt(data, len(data))
     elif("SPECK" == g_encryptionalgo):
         data = g_encryption.speckencrypt(data)
+    elif("PRESENT" == g_encryptionalgo):
+        data = g_encryption.presentencrypt(data)
     else:
         pass
     
@@ -123,6 +126,8 @@ def perform_decryption(data):
             data = g_encryption.rc4decrypt(data, len(data))
         elif("SPECK" == g_encryptionalgo):
             data = g_encryption.speckdecrypt(data)
+        elif("PRESENT" == g_encryptionalgo):
+            data = g_encryption.presentdecrypt(data)
         else:
             pass
     # End Measurement
@@ -149,6 +154,8 @@ def setencryptionalgo(algorithm):
         g_encryption = RC4(RC4_KEY, RC4_S_ARRAY_SIZE)
     elif ("SPECK" == g_encryptionalgo):
         g_encryption = SPECK(SPECK_KEY)
+    elif ("PRESENT" == g_encryptionalgo):
+        g_encryption = PRESENT()
     else:
         pass
     # Reset the encryption and decryption samples
