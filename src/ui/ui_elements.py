@@ -222,7 +222,6 @@ class CANSimGUI(tb.Window):
         {"text": "dec cycles/byte", "stretch": True},
         {"text": "enc cpu %", "stretch": True},
         {"text": "dec cpu %", "stretch": True},
-        {"text": "deadline miss ratio %", "stretch": True}
         ]
 
         self.dt = Tableview(
@@ -366,7 +365,6 @@ class CANSimGUI(tb.Window):
                     row.append(de_perfmetrics[eachAlgo]["cycles/byte"])
                     row.append(en_perfmetrics[eachAlgo]["cpu_percent"])
                     row.append(de_perfmetrics[eachAlgo]["cpu_percent"])
-                    row.append(deadlinemiss[eachAlgo])
                     # Append row to the table view
                     self.dt.insert_row(values=row) 
     
@@ -380,7 +378,7 @@ class CANSimGUI(tb.Window):
         # X-axis positions
         x = np.arange(len(en_perfmetrics.keys()))
         width = 0.15  # bar width
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2,2, figsize=(10, 8))
+        fig, (ax1, ax2) = plt.subplots(1,2, figsize=(12, 6))
 
         # For Performance Measurements Bar Plot
         title1 = "Performance Measurements - Time"
@@ -424,23 +422,6 @@ class CANSimGUI(tb.Window):
         ax2.bar_label(ax2_bars1, padding=5)
         ax2.bar_label(ax2_bars2, padding=10)
 
-        # For Deadline miss counts
-        title3 = f"Deadline Miss counts at {self.canconf_entry3.get()}ms periodicity"
-        enc_deadlinemisscounts = list(float(deadlinemiss[eachalgo]) for eachalgo in deadlinemiss.keys())
-
-        ax3_bars1 = ax3.bar(x, enc_deadlinemisscounts, width, label="Deadline Miss counts")
-
-        ax3.set_ylabel("counts")
-        ax3.set_title(title3)
-        ax3.set_xticks(x)
-        ax3.set_xticklabels(deadlinemiss.keys())
-        ax3.legend(loc='upper left') 
-        ax3.grid(axis="y", linestyle="--", alpha=0.7)
-
-        ax3.bar_label(ax3_bars1, padding=5)
-
-        ax4.axis('off')
-        
         plt.tight_layout()
         plt.show()
 
