@@ -59,7 +59,7 @@ def perf_meas_init():
     '''Initializes the sample arrays for capturing the time samples'''
     global encrypt_samples, decrypt_samples, encrypt_cpuper, decrypt_cpuper
     #Initialize the samples array
-    for algo in ["None", "RC4", "SPECK", "TEA", "PRESENT", "HMAC" ]:
+    for algo in ["None", "RC4", "SPECK", "TEA", "PRESENT", "AES128" ]:
         encrypt_samples[algo] = []
         decrypt_samples[algo] = []
         encrypt_cpuper[algo] = []

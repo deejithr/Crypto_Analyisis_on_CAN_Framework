@@ -85,12 +85,32 @@ cipherdescription = {
 
     "PRESENT" : [
         ["PRESENT\n", "heading"],
-        ["To be implemented\n\n", "default"],
-        ["Raw data Transmitted", "default"]
+        ["The PRESENT algorithm is an ultra-lightweight block cipher designed for resource-constrained devices, such as radio-frequency identification (RFID) tags and sensor networks. The algorithm uses a Substitution-Permutation Network (SPN) structure, and its low-complexity design makes it highly efficient for hardware implementation.\n", "default"],
+        ["\nBlock size: ", "bold"],
+        ["64 bits.\n", "default"],
+        ["Key size: ", "bold"],
+        ["80 bits (PRESENT-80)\n", "default"],
+        ["Rounds: ", "bold"],
+        ["31 rounds, plus a final key addition.\n", "default"],
+        ["Structure: ", "bold"],
+        ["SPN, with each round comprising three layers.\n", "default"],
+        ["\nEncryption process\n", "bold"],
+        ["The encryption of a 64-bit plaintext block involves 31 identical rounds, each with three main operations, plus a final key addition.\n", "default"],
+        ["\nRound 1 through 31\n", "bold"],
+        ["Each of these rounds consists of the following steps:\n", "default"],
+        ["AddRoundKey: The current 64-bit state is bitwise XORed with a unique 64-bit round key K_i derived from the master key.\n", "default"],
+        ["SBoxLayer (Substitution): The 64-bit state is split into 16 separate 4-bit \"nibbles.\" Each nibble is passed through the same 4x4 S-box (substitution box), which provides the non-linear \"confusion\" aspect of the cipher.pLayer (Permutation): All 64 bits of the state are rearranged according to a specific permutation table. This operation provides \"diffusion\" by mixing the bits across the state.\n", "default"],
+        ["\nRound 32\n", "bold"],
+        ["After the 31st round, a final AddRoundKey operation is performed. The resulting state is XORed with the 32nd round key K_32 to produce the final 64-bit ciphertext.\n", "default"],
+        ["\nKey schedule\n", "bold"],
+        ["PRESENT uses an algorithm to generate 32 round keys from the initial master key. The key schedule is as follows\n", "default"],
+        ["\nFor PRESENT-80\n", "bold"],
+        ["Initial state: The 80-bit master key is loaded into a key register.Round key generation: For each round, the leftmost 64 bits of the key register become the round key K_i.Key register update: The key register is updated for the next round by performing the following operations:Rotate the register 61 bits to the left.Apply the 4x4 S-box to the four leftmost bits of the register.XOR five specific bits of the register with the round counter.\n", "default"],
+        ["\nDecryption is the inverse of encryption, applying the operations in reverse order. Inverse operations include XOR for AddRoundKey, the inverse permutation P^-1 for pLayer, and the inverse S-box S^-1 for SBoxLayer.\n", "default"],
     ],
 
-    "HMAC" : [
-        ["HMAC\n", "heading"],
+    "AES128" : [
+        ["AES128\n", "heading"],
         ["To be implemented\n\n", "default"],
         ["Raw data Transmitted", "default"]
     ],
@@ -184,7 +204,7 @@ class CANSimGUI(tb.Window):
         self.selected_algo = tk.StringVar(value="None")
         self.rb_cryalgo_tab = []
         index = 0
-        for algo in ["None", "RC4", "SPECK", "TEA", "PRESENT", "HMAC" ]:
+        for algo in ["None", "RC4", "SPECK", "TEA", "PRESENT", "AES128" ]:
             self.rb_cryalgo_tab.append(tb.Radiobutton(cryalgo_frame, text=algo, variable=self.selected_algo, 
                                             value=algo, bootstyle="info"))
             self.rb_cryalgo_tab[index].pack(side="top", anchor="w", padx=20, pady=5)
@@ -352,7 +372,7 @@ class CANSimGUI(tb.Window):
             de_perfmetrics = getperfmetrics("decryption_samples")
             deadlinemiss[self.selected_algo.get()] = '%.3f'%getdeadlinemissratio()
             
-            for eachAlgo in ["None", "RC4", "SPECK", "TEA", "PRESENT", "HMAC" ]:
+            for eachAlgo in ["None", "RC4", "SPECK", "TEA", "PRESENT", "AES128" ]:
                 # Only if the sample data is present
                 if(eachAlgo in en_perfmetrics.keys()):
                     row = []
@@ -399,10 +419,10 @@ class CANSimGUI(tb.Window):
         ax1.legend(loc='upper left') 
         ax1.grid(axis="y", linestyle="--", alpha=0.7)
 
-        ax1.bar_label(ax1_bars1, padding=5)
-        ax1.bar_label(ax1_bars2, padding=10)
-        ax1.bar_label(ax1_bars3, padding=15)
-        ax1.bar_label(ax1_bars4, padding=5)
+        ax1.bar_label(ax1_bars1, rotation=90, padding=5)
+        ax1.bar_label(ax1_bars2, rotation=90, padding=5)
+        ax1.bar_label(ax1_bars3, rotation=90, padding=5)
+        ax1.bar_label(ax1_bars4, rotation=90, padding=5)
 
         # For Cycles per Bytes Bar Plot
         title2 = "Cycles per byte"
@@ -419,8 +439,8 @@ class CANSimGUI(tb.Window):
         ax2.legend(loc='upper left', ncols=2) 
         ax2.grid(axis="y", linestyle="--", alpha=0.7)
 
-        ax2.bar_label(ax2_bars1, padding=5)
-        ax2.bar_label(ax2_bars2, padding=10)
+        ax2.bar_label(ax2_bars1, rotation=90, padding=5)
+        ax2.bar_label(ax2_bars2, rotation=90, padding=5)
 
         plt.tight_layout()
         plt.show()
