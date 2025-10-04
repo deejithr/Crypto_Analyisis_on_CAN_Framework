@@ -35,8 +35,8 @@ DEBUG_PRINT = False
 # Delay
 DELAY_IN_S = 20/1000
 
-#Loop Timeout seconds
-looptimeout = 2
+#Loop Timeout in seconds
+LOOPTIMEOUT = 2
 
 ################################################################################
 # Globals
@@ -236,7 +236,7 @@ class CanSim:
             NODE_DEINITIALIZED != self.CanbusList[0].nodes[0].nodestatus or
             NODE_DEINITIALIZED != self.CanbusList[1].nodes[0].nodestatus
         ) and
-        ((time.time() - loopstarttime < looptimeout))):
+        ((time.time() - loopstarttime < LOOPTIMEOUT))):
             pass
 
 

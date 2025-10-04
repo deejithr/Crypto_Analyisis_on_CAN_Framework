@@ -397,7 +397,7 @@ class CANSimGUI(tb.Window):
         global en_perfmetrics, de_perfmetrics, deadlinemiss
         # X-axis positions
         x = np.arange(len(en_perfmetrics.keys()))
-        width = 0.15  # bar width
+        width = 0.20  # bar width
         fig, (ax1, ax2) = plt.subplots(1,2, figsize=(12, 6))
 
         # For Performance Measurements Bar Plot

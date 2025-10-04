@@ -8,15 +8,16 @@ It includes :
 ################################################################################
 # Imports
 ################################################################################
-PRESENT_KEY = b"2023ht6554" 
-PRESENT_ROUNDS = 31
+
 
 
 
 ################################################################################
 # Macros
 ################################################################################
-# Key and array size information for RC4 Algorithm
+# Key and rounds for PRESENT Algorithm
+PRESENT_KEY = b"2023ht6554" 
+PRESENT_ROUNDS = 31
 
 
 ################################################################################
@@ -50,6 +51,8 @@ class PRESENT:
         self.round_keys = self.generate_round_keys()
 
     def generate_round_keys(self):
+        '''Generate round keys for PRESENT Algorithm.
+           Called during Initialization'''
         # Key schedule for PRESENT-80
         round_keys = []
         current_key = self.key
@@ -70,9 +73,11 @@ class PRESENT:
         return round_keys
 
     def add_round_key(self, state, round_key):
+        '''Adding roundkey to plaintext in each round'''
         return state ^ round_key
 
     def s_box_layer(self, state, s_box_table):
+        '''Perform Substitution'''
         new_state = 0
         for i in range(16): # 16 nibbles in a 64-bit state
             nibble = (state >> (i * 4)) & 0xF
@@ -80,6 +85,7 @@ class PRESENT:
         return new_state
 
     def p_box_layer(self, state):
+        '''Perform Permutation'''
         new_state = 0
         for i in range(64):
             if (state >> i) & 1:
@@ -87,6 +93,7 @@ class PRESENT:
         return new_state
 
     def presentencrypt(self, plaintext):
+        '''Perform Encryption'''
         plaintext = int("".join(f"{i:02x}" for i in plaintext), base=16)
         if len(bin(plaintext)[2:]) > 64:
             raise ValueError("Plaintext must be 64 bits or less.")
@@ -103,6 +110,7 @@ class PRESENT:
         return bytearray(state_bytes)
 
     def presentdecrypt(self, ciphertext):
+        '''Perform Decryption'''
         ciphertext = int("".join(f"{i:02x}" for i in ciphertext), base=16)
         if len(bin(ciphertext)[2:]) > 64:
             raise ValueError("Ciphertext must be 64 bits or less.")
@@ -120,6 +128,7 @@ class PRESENT:
         return bytearray(state_bytes)
 
     def p_box_layer_inverse(self, state):
+        '''Perform Inverse Permutation for decryption'''
         # Inverse P-box is simply applying P_BOX in reverse
         new_state = 0
         for i in range(64):
