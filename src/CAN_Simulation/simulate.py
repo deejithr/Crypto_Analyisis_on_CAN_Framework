@@ -29,6 +29,9 @@ NODE_RECEIVER = 1
 NODE_DEINITIALIZED = 0
 NODE_INITIALIZED = 1
 
+# To enable debug prints in the file
+DEBUG_PRINT = False
+
 # Delay
 DELAY_IN_S = 20/1000
 
@@ -122,13 +125,15 @@ class Node:
                 now = time.perf_counter_ns()
                 deadline = next_execution_ns + int(DELAY_IN_S * CONVERT_S_TO_NS)
 
-                print("Period: ", (now - prev) * CONVERT_NS_TO_MS)
+                if (True == DEBUG_PRINT):
+                    print("Period: ", (now - prev) * CONVERT_NS_TO_MS)
                 # Update Prev with now value
                 prev = now
 
                 if now > deadline:
                     deadlinemisscounts += 1
-                    print("Deadline missed : ", deadlinemisscounts)
+                    if (True == DEBUG_PRINT):
+                        print("Deadline missed : ", deadlinemisscounts)
 
                 # Next Execution Window
                 next_execution_ns += int(DELAY_IN_S * CONVERT_S_TO_NS)
@@ -136,7 +141,8 @@ class Node:
                 # to send the message with the configured delay, Calculate how long to sleep
                 time_to_sleep_ns = next_execution_ns - time.perf_counter_ns()
                 if time_to_sleep_ns > 0:
-                    print("Sleep time: " ,  time_to_sleep_ns * CONVERT_NS_TO_MS)
+                    if (True == DEBUG_PRINT):
+                        print("Sleep time: " ,  time_to_sleep_ns * CONVERT_NS_TO_MS)
                     # Provide the calculated sleep time
                     time.sleep(time_to_sleep_ns * CONVERT_NS_TO_S)
             except:
