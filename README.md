@@ -12,7 +12,7 @@ The following encryption algorithms are currently selected. (TBD)
  - RC4 (Stream Cipher)
 	 - 256 byte state array
 	 - fast and lightweight, suitable for CAN and low end ECUs
- - SPECK 32/64
+ - SPECK 64/128
 	 - designed for IOT devices, hence suitable for CAN usecase
 	 - faster and smaller than AES or SHA
  - Tiny Encryption Algorithm (TEA)
@@ -22,6 +22,10 @@ The following encryption algorithms are currently selected. (TBD)
  - PRESENT
 	 - Lightweight block cipher (substitution–permutation network)
 	 - smaller code size and lower cpu consumption
+ - AES128
+	 - Standard encryption used
+     - In stream Mode
+	 - Generate keystream and XOR with plaintext
 
 
 Design of the framework is done in such a way that, new algorithms can be plugged in with little to no change in the framework
@@ -58,12 +62,10 @@ Run the script `Run.sh` to initate the UI
 
 ## UI
 Snapshots of the UI
-<img width="1201" height="805" alt="UI_1" src="https://github.com/user-attachments/assets/5ae17a40-db4a-467a-94d2-4ce431d99ffb" />
 
-<img width="1200" height="802" alt="UI_2" src="https://github.com/user-attachments/assets/95b2ac8b-f98d-48b9-9723-571a95163f00" />
+<img width="1201" height="805" alt="UI_1" src="images/Screenshot 2025-10-04 163018.png" />
 
-
-<img width="1203" height="806" alt="UI_3" src="https://github.com/user-attachments/assets/8f8755a6-9d0a-4106-8557-8d3a47d009e8" />
+<img width="1200" height="802" alt="UI_2" src="images/Screenshot 2025-10-04 163156.png" />
 
 ## RoadMap
 - Currently only RC4 encryption is implemented, which directly encrypts the data, and the data is decoded at the reciever side. This shall be expanded with Freshness value and MAC added
