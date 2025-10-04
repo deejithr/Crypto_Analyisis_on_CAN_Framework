@@ -113,7 +113,8 @@ class Node:
                 msg = can.Message(
                     arbitration_id=can_msg.arbritration_id,
                     data=encrypteddata,
-                    is_extended_id=can_msg.isextended)
+                    is_extended_id=can_msg.isextended,
+                    is_rx = False)
                 
                 msg.timestamp = time.time()
                 self.nodebus.send(msg)
@@ -165,8 +166,10 @@ class Node:
 
         while True == simulationstate:
             try:
-                received = self.nodebus.recv(1.0)  # timeout = 1s
+                received = self.nodebus.recv()
                 if received:
+                    # Setting the received flag to True
+                    received.is_rx = True
                     # Perform Decrytpion and acceptance
                     decrypteddata, decryptiontime, accepted = perform_decryption(received.data)
                     print("Receiver: Data after Decryption:   " + str(list(decrypteddata)))
@@ -184,7 +187,7 @@ class CanBus:
         self.busname = busname
         # Create Virtual CAN Bus
         self.bus = can.interface.Bus(busname, bustype='socketcan', bitrate=250000,
-                                      preserve_timestamps=True)
+                                      preserve_timestamps=True, receive_own_messages=False)
         self.nodes : List[Node] = []
         
 class CanSim:
