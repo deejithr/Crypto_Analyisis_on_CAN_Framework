@@ -198,7 +198,7 @@ def getperfmetrics(sampletype):
             p95 = np.percentile(samples, 95)
             p99 = np.percentile(samples, 99)
             jitter_ns = statistics.pstdev(samples)
-            cyclesperbyte = mean_ns * CPU_FREQ_MHZ / 1000
+            cyclesperbyte = (mean_ns * CPU_FREQ_MHZ / 1000)/8
 
             # Add data to the Metrics dictionary
             perfmetrics[eachalgo] = {
