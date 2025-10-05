@@ -316,11 +316,11 @@ class CANSimGUI(tb.Window):
 
     def printtoreceiverconsole(self, msg , accepted):
         '''Function to print into the Receiver Console text box'''
-        self.recv_console_text.insert(tk.END, "\n" + msg)
+        # self.recv_console_text.insert(tk.END, )
         if (DECRYPT_OK == accepted):
-            self.recv_console_text.insert(tk.END, "  ✅", "green_bold")
+            self.recv_console_text.insert(tk.END, "\n" + msg + "  ✅")
         else:
-            self.recv_console_text.insert(tk.END, "  ❌", "red_bold")
+            self.recv_console_text.insert(tk.END, "\n" + msg + "  ❌")
         self.recv_console_text.see(tk.END)
 
     def clearconsole(self):

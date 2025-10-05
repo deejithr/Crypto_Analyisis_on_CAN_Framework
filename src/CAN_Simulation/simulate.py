@@ -76,9 +76,9 @@ class Node:
         # Create thread based on node type
         try:
             if self.nodetype == NODE_SENDER:
-                self.thread = threading.Thread(target=self.action_sender, args=())
+                self.thread = threading.Thread(target=self.action_sender, args=(), daemon=True)
             elif self.nodetype == NODE_RECEIVER:
-                self.thread = threading.Thread(target=self.action_receiver, args=())
+                self.thread = threading.Thread(target=self.action_receiver, args=(), daemon=True)
         except:
             print("[Error] Unable to create thread")
         
@@ -166,8 +166,8 @@ class Node:
 
         while True == simulationstate:
             try:
-                received = self.nodebus.recv()
-                if received:
+                # received = self.nodebus.recv()
+                for received in self.nodebus:
                     # Setting the received flag to True
                     received.is_rx = True
                     # Perform Decrytpion and acceptance
@@ -186,8 +186,8 @@ class CanBus:
         '''Represents a CAN Communication Bus'''
         self.busname = busname
         # Create Virtual CAN Bus
-        self.bus = can.interface.Bus(busname, bustype='socketcan', bitrate=250000,
-                                      preserve_timestamps=True, receive_own_messages=False)
+        self.bus = can.ThreadSafeBus(busname, interface='socketcan', bitrate=250000,
+                                      preserve_timestamps=True, receive_own_messages=True)
         self.nodes : List[Node] = []
         
 class CanSim:
@@ -200,15 +200,15 @@ class CanSim:
         global objcanbus_1, objcanbus_2
         # Initialize CAN Bus
         objcanbus_1 = CanBus("vcan0")
-        objcanbus_2 = CanBus("vcan0")
+        # objcanbus_2 = CanBus("vcan0")
 
         #Add Canbus to the Simulation BusList
         self.CanbusList.append(objcanbus_1)
-        self.CanbusList.append(objcanbus_2)
+        self.CanbusList.append(objcanbus_1)
 
         #Instantiate the Nodes
         objcanbus_1.nodes.append(Node("ECU1", NODE_SENDER, objcanbus_1.bus))
-        objcanbus_2.nodes.append(Node("ECU2", NODE_RECEIVER, objcanbus_2.bus))
+        objcanbus_1.nodes.append(Node("ECU2", NODE_RECEIVER, objcanbus_1.bus))
 
     def start_simulation(self):
         '''This function starts the simulation'''
