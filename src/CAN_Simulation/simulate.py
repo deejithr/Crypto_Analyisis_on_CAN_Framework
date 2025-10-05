@@ -204,7 +204,7 @@ class CanSim:
 
         #Add Canbus to the Simulation BusList
         self.CanbusList.append(objcanbus_1)
-        self.CanbusList.append(objcanbus_1)
+        # self.CanbusList.append(objcanbus_1)
 
         #Instantiate the Nodes
         objcanbus_1.nodes.append(Node("ECU1", NODE_SENDER, objcanbus_1.bus))
@@ -234,7 +234,7 @@ class CanSim:
         loopstarttime = time.time()
         while ((
             NODE_DEINITIALIZED != self.CanbusList[0].nodes[0].nodestatus or
-            NODE_DEINITIALIZED != self.CanbusList[1].nodes[0].nodestatus
+            NODE_DEINITIALIZED != self.CanbusList[0].nodes[1].nodestatus
         ) and
         ((time.time() - loopstarttime < LOOPTIMEOUT))):
             pass
