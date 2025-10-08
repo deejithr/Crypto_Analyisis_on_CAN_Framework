@@ -53,6 +53,9 @@ can_msg = None
 deadlinemisscounts = 0
 sentmessagescount = 0 
 
+pid_sender = 0
+pid_receiver = 0
+
 ################################################################################
 # Classes
 ################################################################################
@@ -89,14 +92,15 @@ class Node:
         '''Function for actions to be performed by the sender'''
         global simulationstate, encrypt_samples, can_msg, DELAY_IN_S
         global deadlinemisscounts, sentmessagescount
+        global pid_sender
 
         print("Sender Node: " + self.nodename +  " Initiated")
         self.nodestatus = NODE_INITIALIZED
         
-        # Pin the thread to Core0, otherwise Scheduler will distribute it to other cores
-        # Pin to core 0
-        pid = threading.get_native_id()
-        os.sched_setaffinity(pid, {0})
+        # Pin the thread to Core1, otherwise Scheduler will distribute it to other cores
+        # Pin to core 1
+        pid_sender = threading.get_native_id()
+        os.sched_setaffinity(pid_sender, {1})
 
         #For deadlinemiss counts
         deadlinemisscounts = 0
@@ -154,15 +158,15 @@ class Node:
         
     def action_receiver(self):
         '''Function for actions to be performed by the Receiver'''
-        global simulationstate, decrypt_samples
+        global simulationstate, decrypt_samples, pid_receiver
         print("Receiver Node: " + self.nodename +  " Initiated")
         self.nodestatus = NODE_INITIALIZED
 
         decrypt_samples = []
-        # Pin the thread to Core0, otherwise Scheduler will distribute it to other cores
-        # Pin to core 0
-        pid = threading.get_native_id()
-        os.sched_setaffinity(pid, {0})  
+        # Pin the thread to Core2, otherwise Scheduler will distribute it to other cores
+        # Pin to core 2
+        pid_receiver = threading.get_native_id()
+        os.sched_setaffinity(pid_receiver, {2})  
 
         while True == simulationstate:
             try:
