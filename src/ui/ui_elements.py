@@ -204,7 +204,7 @@ class CANSimGUI(tb.Window):
         self.selected_algo = tk.StringVar(value="None")
         self.rb_cryalgo_tab = []
         index = 0
-        for algo in ["None", "RC4", "SPECK", "TEA", "PRESENT", "AES128" ]:
+        for algo in ENCRYPTION_ALGORITHMS:
             self.rb_cryalgo_tab.append(tb.Radiobutton(cryalgo_frame, text=algo, variable=self.selected_algo, 
                                             value=algo, bootstyle="info"))
             self.rb_cryalgo_tab[index].pack(side="top", anchor="w", padx=20, pady=5)
@@ -226,11 +226,17 @@ class CANSimGUI(tb.Window):
         perf_tab_subframe1.pack(side="top", padx=10, fill=tk.X)
 
         perf_label = tb.Label(perf_tab_subframe1, text="Performance Metrics", bootstyle="info", anchor = "w")
-        perf_label.pack(side="left",anchor=tk.NW, padx=10, pady=20)
+        perf_label.pack(side="left",anchor=tk.NW, padx=10, pady=10)
 
-        self.perf_comparebtn = tb.Button(perf_tab_subframe1, text="Compare",
+        perf_tab_subframe2 = tb.Frame(perf_tab_subframe1)
+        perf_tab_subframe2.pack(anchor=tk.SE, side="left", expand=True)
+
+        self.perf_benchmarkbtn = tb.Button(perf_tab_subframe2, text="Run Benchmark",
+                                   bootstyle="danger", command=self.do_benchmark)
+        self.perf_benchmarkbtn.pack(side="left", padx=10, pady=10)
+        self.perf_comparebtn = tb.Button(perf_tab_subframe2, text="Compare",
                                    bootstyle="danger", command=self.do_comparison)
-        self.perf_comparebtn.pack(anchor=tk.SE, padx=10, pady=10)
+        self.perf_comparebtn.pack(side="left", padx=10, pady=10)
 
         coldata = [
         {"text": "Algorithm", "stretch": True},
@@ -242,6 +248,7 @@ class CANSimGUI(tb.Window):
         {"text": "dec cycles/byte", "stretch": True},
         {"text": "enc cpu %", "stretch": True},
         {"text": "dec cpu %", "stretch": True},
+        {"text": "deadline miss ratio %", "stretch": True}
         ]
 
         self.dt = Tableview(
@@ -318,9 +325,9 @@ class CANSimGUI(tb.Window):
         '''Function to print into the Receiver Console text box'''
         # self.recv_console_text.insert(tk.END, )
         if (DECRYPT_OK == accepted):
-            self.recv_console_text.insert(tk.END, "\n" + msg + "  ✅")
+            self.recv_console_text.insert(tk.END, "\n" + msg + "  ✅" , "green_bold")
         else:
-            self.recv_console_text.insert(tk.END, "\n" + msg + "  ❌")
+            self.recv_console_text.insert(tk.END, "\n" + msg + "  ❌", "red_bold")
         self.recv_console_text.see(tk.END)
 
     def clearconsole(self):
@@ -372,7 +379,7 @@ class CANSimGUI(tb.Window):
             de_perfmetrics = getperfmetrics("decryption_samples")
             deadlinemiss[self.selected_algo.get()] = '%.3f'%getdeadlinemissratio()
             
-            for eachAlgo in ["None", "RC4", "SPECK", "TEA", "PRESENT", "AES128" ]:
+            for eachAlgo in ENCRYPTION_ALGORITHMS:
                 # Only if the sample data is present
                 if(eachAlgo in en_perfmetrics.keys()):
                     row = []
@@ -385,6 +392,7 @@ class CANSimGUI(tb.Window):
                     row.append(de_perfmetrics[eachAlgo]["cycles/byte"])
                     row.append(en_perfmetrics[eachAlgo]["cpu_percent"])
                     row.append(de_perfmetrics[eachAlgo]["cpu_percent"])
+                    row.append(deadlinemiss[eachAlgo])
                     # Append row to the table view
                     self.dt.insert_row(values=row) 
     
@@ -392,13 +400,17 @@ class CANSimGUI(tb.Window):
         ''' Prepares chart for data comparison '''
         # Plot Encryption Performance Metrics
         self.plot_bar()
+    
+    def do_benchmark(self):
+        pass
 
     def plot_bar(self):
         global en_perfmetrics, de_perfmetrics, deadlinemiss
         # X-axis positions
         x = np.arange(len(en_perfmetrics.keys()))
         width = 0.20  # bar width
-        fig, (ax1, ax2) = plt.subplots(1,2, figsize=(12, 6))
+        fig1, (ax1, ax2) = plt.subplots(1,2, figsize=(12, 6))
+  
 
         # For Performance Measurements Bar Plot
         title1 = "Performance Measurements - Time"
@@ -441,6 +453,40 @@ class CANSimGUI(tb.Window):
 
         ax2.bar_label(ax2_bars1, rotation=90, padding=5)
         ax2.bar_label(ax2_bars2, rotation=90, padding=5)
+     
+        fig2, (ax3, ax4) = plt.subplots(1,2, figsize=(12, 6))
+        # For CPU Percent
+        title3 = f"CPU Percentage "
+        enc_cpupercent = list(float(en_perfmetrics[eachalgo]["cpu_percent"]) for eachalgo in en_perfmetrics.keys())
+        dec_cpupercent = list(float(de_perfmetrics[eachalgo]["cpu_percent"]) for eachalgo in en_perfmetrics.keys())
+
+        ax3_bars1 = ax3.bar(x - width, enc_cpupercent, width, label="enc cpu percentage")
+        ax3_bars2 = ax3.bar(x, dec_cpupercent, width, label="dec cpu percentage")
+
+        ax3.set_ylabel("CPU Percent")
+        ax3.set_title(title3)
+        ax3.set_xticks(x)
+        ax3.set_xticklabels(en_perfmetrics.keys())
+        ax3.legend(loc='upper left', ncols=2) 
+        ax3.grid(axis="y", linestyle="--", alpha=0.7)
+
+        ax3.bar_label(ax3_bars1, rotation=90, padding=5)
+        ax3.bar_label(ax3_bars2, rotation=90, padding=5)
+        
+        # For Deadline miss counts
+        title4 = f"Deadline Miss counts at {self.canconf_entry3.get()}ms periodicity"
+        deadlinemisscounts = list(float(deadlinemiss[eachalgo]) for eachalgo in deadlinemiss.keys())
+
+        ax4_bars1 = ax4.bar(x, deadlinemisscounts, width, label="Deadline Miss counts")
+
+        ax4.set_ylabel("counts")
+        ax4.set_title(title4)
+        ax4.set_xticks(x)
+        ax4.set_xticklabels(deadlinemiss.keys())
+        ax4.legend(loc='upper left') 
+        ax4.grid(axis="y", linestyle="--", alpha=0.7)
+
+        ax4.bar_label(ax4_bars1, rotation=90, padding=5)
 
         plt.tight_layout()
         plt.show()

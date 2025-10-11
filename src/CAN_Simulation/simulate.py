@@ -103,6 +103,7 @@ class Node:
         os.sched_setaffinity(pid_sender, {1})
 
         #For deadlinemiss counts
+        # Reset the deadline miss counts
         deadlinemisscounts = 0
         sentmessagescount = 0
 
@@ -204,11 +205,9 @@ class CanSim:
         global objcanbus_1, objcanbus_2
         # Initialize CAN Bus
         objcanbus_1 = CanBus("vcan0")
-        # objcanbus_2 = CanBus("vcan0")
 
         #Add Canbus to the Simulation BusList
         self.CanbusList.append(objcanbus_1)
-        # self.CanbusList.append(objcanbus_1)
 
         #Instantiate the Nodes
         objcanbus_1.nodes.append(Node("ECU1", NODE_SENDER, objcanbus_1.bus))
