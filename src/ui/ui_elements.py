@@ -19,6 +19,7 @@ from CAN_Simulation.simulate import *
 from ttkbootstrap.tableview import Tableview
 from ttkbootstrap.constants import *
 import matplotlib.pyplot as plt
+import json
 
 
 
@@ -28,6 +29,9 @@ import matplotlib.pyplot as plt
 #Enum for simulation start/stop
 STARTED = 0
 STOPPED = 1
+
+# Periodicity to print messages in the console
+CONSOLE_LOGGING_PERIOD = 10
 
 # Description information for each cipher
 cipherdescription = {
@@ -125,17 +129,37 @@ de_perfmetrics = {}
 # For saving the deadline miss ratio
 deadlinemiss = {}
 
+#Multiprocessing Queues
+ui_senderqueue = None
+ui_receiverqueue = None
+
+# Shared Variables
+deadlinemisscounts = None
+sentmessagescount = None
+simulationstate = None
+
+#Shared variables for collecting the encrypt and decrypt time samples
+manager = None
+encrypt_samples = None
+decrypt_samples = None
+encrypt_cpuper = None
+decrypt_cpuper = None
+
 ################################################################################
 # Classes
 ################################################################################
 class CANSimGUI(tb.Window):
     '''Represents the UI'''
     def __init__(self):
+        global encrypt_samples, decrypt_samples, encrypt_cpuper , decrypt_cpuper
+        global manager 
+
         self.startsimcallback = None
         self.stopsimcallback = None
         super().__init__(title="CryptoAnalysis for CAN", themename="simplex")
         self.geometry("1200x768")
 
+        #----------------------------------- UI Initialization --------------------------------#
         # Start and Stop simulation
         button_frame = tb.Frame(self)
         button_frame.pack(fill="x", pady=10)
@@ -293,42 +317,96 @@ class CANSimGUI(tb.Window):
         self.recv_console_text.pack(side="left", fill="both", expand=True, padx=10, pady=10)
         self.recv_console_text.tag_config("green_bold", foreground="green", font=("Arial", 10, "bold"))
         self.recv_console_text.tag_config("red_bold", foreground="red", font=("Arial", 10, "bold"))
+        
+        #------------------------------------------------------------------------------------------#
 
         # Set simulation state to STOPPED, initially
         self.simulation = STOPPED
 
+        #Initialize the Shared variables to capture the performance metrics
+        manager = Manager()
+        encrypt_samples = manager.dict()
+        decrypt_samples = manager.dict()
+        encrypt_cpuper = manager.dict()
+        decrypt_cpuper = manager.dict()
+        
+        #Initialize the samples array in the performance Metrics array for each algorithm
+        for algo in ENCRYPTION_ALGORITHMS:
+            encrypt_samples[algo] = []
+            decrypt_samples[algo] = []
+            encrypt_cpuper[algo] = []
+            decrypt_cpuper[algo] = []
+
     def do_start_stop_simulation(self):
         '''Function called on pressing the Start/Stop button'''
+        global ui_receiverqueue, ui_senderqueue
+        global deadlinemisscounts, sentmessagescount
+        global simulationstate
+        global encrypt_samples, encrypt_cpuper
+        global decrypt_samples, decrypt_cpuper
+
         #If simulation is already started
         if (self.simulation == STARTED):
             #Set the state to STOPPED
             self.simulation = STOPPED
             self.start_stop_btn.config(text="▶ Start Simulation", bootstyle="success")
             #Call the stop simulation callback 
-            self.stopsimcallback()
+            self.stopsimcallback(simulationstate)
             self.inserttotableview(None)
+        
         #If simulation is Stopped
         elif(self.simulation == STOPPED):
+            #Create a multiprocessing queue for sender and receiver
+            ui_senderqueue = multiprocessing.Queue()
+            ui_receiverqueue = multiprocessing.Queue()
+
+            # Shared variables
+            # Simulation State. Simulation will stop, once the state becomes False
+            simulationstate = Value('i', False)
+            # DeadlineMissCounts. Number of times the deadline was missed
+            deadlinemisscounts = Value('i', False)
+            # Total Number of Sent Messages
+            sentmessagescount = Value('i', False)
+
             #Set the state to STARTED
             self.simulation = STARTED
             self.start_stop_btn.config(text="■ Stop Simulation", bootstyle="danger")
             self.inserttotableview("Simulation in Progress")
             #Call the start simulation callback
-            self.startsimcallback()
+            self.startsimcallback(ui_senderqueue, ui_receiverqueue, simulationstate, 
+                                  deadlinemisscounts, sentmessagescount,
+                                  encrypt_samples, encrypt_cpuper,
+                                  decrypt_samples, decrypt_cpuper)
 
-    def printtosenderconsole(self, msg):
+    def printtosenderconsole(self):
         '''Function to print into the Sender Console text box'''
-        self.sender_console_text.insert(tk.END, "\n" + msg )
-        self.sender_console_text.see(tk.END)
+        global ui_senderqueue
 
-    def printtoreceiverconsole(self, msg , accepted):
+        if(None != ui_senderqueue):
+            #Print until the queue is empty
+            while not ui_senderqueue.empty():
+                msg = ui_senderqueue.get()
+                self.sender_console_text.insert(tk.END, "\n" + msg )
+                self.sender_console_text.see(tk.END)
+        # schedule next check
+        self.after(CONSOLE_LOGGING_PERIOD, self.printtosenderconsole)  
+
+    def printtoreceiverconsole(self):
         '''Function to print into the Receiver Console text box'''
-        # self.recv_console_text.insert(tk.END, )
-        if (DECRYPT_OK == accepted):
-            self.recv_console_text.insert(tk.END, "\n" + msg + "  ✅" , "green_bold")
-        else:
-            self.recv_console_text.insert(tk.END, "\n" + msg + "  ❌", "red_bold")
-        self.recv_console_text.see(tk.END)
+        global ui_receiverqueue
+
+        if (None != ui_receiverqueue):
+            #Print until the queue is empty
+            while not ui_receiverqueue.empty():
+                msg = ui_receiverqueue.get()
+                # self.recv_console_text.insert(tk.END, )
+                if (msg.__contains__("  ✅")):
+                    self.recv_console_text.insert(tk.END, "\n" + msg, "green_bold")
+                else:
+                    self.recv_console_text.insert(tk.END, "\n" + msg, "red_bold")
+                self.recv_console_text.see(tk.END)
+        # schedule next check
+        self.after(CONSOLE_LOGGING_PERIOD, self.printtoreceiverconsole)  
 
     def clearconsole(self):
         '''Function clears the console for both Sender and Receiver'''
@@ -375,9 +453,9 @@ class CANSimGUI(tb.Window):
         # If metrics data available,
         else:
             #Get the performance metrics for both encryption and decryption
-            en_perfmetrics = getperfmetrics("encryption_samples")
-            de_perfmetrics = getperfmetrics("decryption_samples")
-            deadlinemiss[self.selected_algo.get()] = '%.3f'%getdeadlinemissratio()
+            en_perfmetrics = self.getperfmetrics("encryption_samples")
+            de_perfmetrics = self.getperfmetrics("decryption_samples")
+            deadlinemiss[self.selected_algo.get()] = '%.3f'%self.getdeadlinemissratio()
             
             for eachAlgo in ENCRYPTION_ALGORITHMS:
                 # Only if the sample data is present
@@ -396,6 +474,11 @@ class CANSimGUI(tb.Window):
                     # Append row to the table view
                     self.dt.insert_row(values=row) 
     
+    def getdeadlinemissratio(self):
+        '''Function to get the deadline miss ratio'''
+        global deadlinemisscounts, sentmessagescount
+        return (100 * (deadlinemisscounts.value)/sentmessagescount.value)
+
     def do_comparison(self):
         ''' Prepares chart for data comparison '''
         # Plot Encryption Performance Metrics
@@ -475,9 +558,9 @@ class CANSimGUI(tb.Window):
         
         # For Deadline miss counts
         title4 = f"Deadline Miss counts at {self.canconf_entry3.get()}ms periodicity"
-        deadlinemisscounts = list(float(deadlinemiss[eachalgo]) for eachalgo in deadlinemiss.keys())
+        deadlinemisses = list(float(deadlinemiss[eachalgo]) for eachalgo in deadlinemiss.keys())
 
-        ax4_bars1 = ax4.bar(x, deadlinemisscounts, width, label="Deadline Miss counts")
+        ax4_bars1 = ax4.bar(x, deadlinemisses, width, label="Deadline Miss counts")
 
         ax4.set_ylabel("counts")
         ax4.set_title(title4)
@@ -502,6 +585,63 @@ class CANSimGUI(tb.Window):
         # Set the CAn message and periodicity
         setcanmessage(canid, data, True)
         setmsgperiodicity(periodicity)
+
+    def resetsamples(self, algorithm):
+        global decrypt_samples, encrypt_cpuper
+        global encrypt_samples, decrypt_cpuper
+
+        # Reset the encryption and decryption samples
+        encrypt_samples[algorithm] = []
+        decrypt_samples[algorithm] = []
+        # Reset the cpu percentage samples
+        encrypt_cpuper[algorithm] = []
+        decrypt_cpuper[algorithm] = []
+
+    def getperfmetrics(self, sampletype):
+        '''Called after simulation stopped to get the Performance metrics for each algorithm'''
+        global encrypt_samples, decrypt_samples
+        global encrypt_cpuper, decrypt_cpuper
+
+        perfmetrics = {}
+        # Select the array depending on the metrics needed
+        if ("encryption_samples" == sampletype):
+            samplearray = encrypt_samples
+            cpuperarray = encrypt_cpuper
+        elif ("decryption_samples" == sampletype):
+            samplearray = decrypt_samples
+            cpuperarray = decrypt_cpuper
+
+        # Reset the mean cpu percentage variable
+        mean_cpuper = {}
+        # For cpu percentage samples
+        for eachalgo, cpuper in cpuperarray.items():
+            mean_cpuper[eachalgo] = 0
+            #Only if valid samples are available
+            if(len(cpuper) > 0):
+                cpuper = np.array(cpuper)
+                mean_cpuper[eachalgo] = statistics.fmean(cpuper)
+
+        # For encryption and decryption times
+        for eachalgo, samples in samplearray.items():
+            #Only if valid samples are available
+            if(len(samples) > 0):
+                samples = np.array(samples)
+                mean_ns = statistics.fmean(samples)
+                p95 = np.percentile(samples, 95)
+                p99 = np.percentile(samples, 99)
+                jitter_ns = statistics.pstdev(samples)
+                cyclesperbyte = (mean_ns * CPU_FREQ_MHZ / 1000)/8
+
+                # Add data to the Metrics dictionary
+                perfmetrics[eachalgo] = {
+                    "mean_ns" : '%.3f'%(mean_ns),
+                    "p95" : '%.3f'%(p95),
+                    "p99" : '%.3f'%(p99),
+                    "jitter_ns" : '%.3f'%(jitter_ns),
+                    "cycles/byte" : '%.3f'%(cyclesperbyte),
+                    "cpu_percent" : '%.3f'%(mean_cpuper[eachalgo])
+                }
+        return perfmetrics
 
 
         

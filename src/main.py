@@ -28,22 +28,12 @@ pid_main= 0
 ################################################################################
 # Functions
 ################################################################################    
-def setcallbackforconsoleprint(objcansim):
-    '''This function sets the callback to be called by the simulation functions to
-        print in the console'''
-    for eachCanBus in objcansim.CanbusList:
-        #Set callback for each Node in the Can bus
-        for eachNode in eachCanBus.nodes:
-            # Depeending on the type of Node
-            if (NODE_SENDER == eachNode.nodetype):
-                eachNode.consoleprint = app.printtosenderconsole
-            else:
-                eachNode.consoleprint = app.printtoreceiverconsole
-             
 def selectencryptionalgo():
     '''Function that will be called on algorithm selection'''
     selected = app.selected_algo.get()
     setencryptionalgo(selected)
+    # Reset the array of encryption and decryption samples for the selected algorithm
+    app.resetsamples(selected)
     # Set the description of the algorithm
     app.insertdescription(selected)
 
@@ -55,8 +45,8 @@ def selectencryptionalgo():
 if __name__ == "__main__":
     # Pin the process to Core0, otherwise Scheduler will distribute it to other cores
     # Pin to core 0
-    pid_main = threading.get_native_id()
-    os.sched_setaffinity(pid_main, {0})
+    # pid_main = os.getpid()
+    # os.sched_setaffinity(pid_main, {0})
     
     # Start the UI
     app = CANSimGUI()
@@ -66,9 +56,6 @@ if __name__ == "__main__":
     #Initializa the CAN Bus
     sim.initializebus()
 
-    # Set callback for ConsolePrint
-    setcallbackforconsoleprint(sim)
-
     # Set callbacks for Start/Stop Simulation in UI
     app.startsimcallback = sim.start_simulation
     app.stopsimcallback = sim.stop_simulation
@@ -76,9 +63,10 @@ if __name__ == "__main__":
     # Set command for crypto algorithm selection
     for eachbutton in app.rb_cryalgo_tab:
         eachbutton.config(command=selectencryptionalgo)
-    
-    #Initialize the performance metrics array
-    perf_meas_init()
+     
+    # Call console printing functions
+    app.printtosenderconsole()
+    app.printtoreceiverconsole()
 
     #Run the application
     app.mainloop()

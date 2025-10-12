@@ -16,6 +16,8 @@ from Crypto_Algorithms.SPECK import *
 from Crypto_Algorithms.PRESENT import *
 import numpy as np
 import psutil, os
+import multiprocessing
+from multiprocessing import Process, Value, Manager
 
 
 
@@ -48,29 +50,11 @@ g_encryptionalgo = "None"
 #Encryption Class Object
 g_encryption = None
 
-#Global variables for collecting the encrypt and decrypt time samples
-encrypt_samples = {}
-decrypt_samples = {}
-encrypt_cpuper = {}
-decrypt_cpuper = {}
-
-
 ################################################################################
 # Functions
 ################################################################################
-def perf_meas_init():
-    '''Initializes the sample arrays for capturing the time samples'''
-    global encrypt_samples, decrypt_samples, encrypt_cpuper, decrypt_cpuper
-    #Initialize the samples array
-    for algo in ENCRYPTION_ALGORITHMS:
-        encrypt_samples[algo] = []
-        decrypt_samples[algo] = []
-        encrypt_cpuper[algo] = []
-        decrypt_cpuper[algo] = []
-
-def perform_encryption(data):
+def perform_encryption(data, encrypt_samples, encrypt_cpuper):
     ''' Perfrom encryption using the selected Algorithm'''
-    global encrypt_samples, encrypt_cpuper
     # Start Measurement
     encryptiontime = 0
     processid = psutil.Process(os.getpid())
@@ -107,9 +91,8 @@ def isMessageAccepted(data):
     return DECRYPT_OK
 
 
-def perform_decryption(data):
+def perform_decryption(data, decrypt_samples, decrypt_cpuper):
     '''Perform Decryption using the selected Algorithm'''
-    global decrypt_samples, decrypt_cpuper
     accepted = DECRYPT_NOT_OK
     
     # Start Measurement
@@ -147,8 +130,6 @@ def perform_decryption(data):
 def setencryptionalgo(algorithm):
     '''Callback called on selecting the encyrption algorithm'''
     global g_encryptionalgo, g_encryption
-    global encrypt_samples, decrypt_samples
-    global encrypt_cpuper, decrypt_cpuper
     
     # Set the selected algorithm to the global variable
     g_encryptionalgo = algorithm
@@ -161,55 +142,3 @@ def setencryptionalgo(algorithm):
         g_encryption = PRESENT()
     else:
         pass
-    # Reset the encryption and decryption samples
-    encrypt_samples[g_encryptionalgo] = []
-    decrypt_samples[g_encryptionalgo] = []
-    # Reset the cpu percentage samples
-    encrypt_cpuper[g_encryptionalgo] = []
-    decrypt_cpuper[g_encryptionalgo] = []
-
-def getperfmetrics(sampletype):
-    '''Called after simulation stopped to get the Performance metrics for each algorithm'''
-    global encrypt_samples, decrypt_samples
-    global encrypt_cpuper, decrypt_cpuper
-
-    perfmetrics = {}
-    # Select the array depending on the metrics needed
-    if ("encryption_samples" == sampletype):
-        samplearray = encrypt_samples
-        cpuperarray = encrypt_cpuper
-    elif ("decryption_samples" == sampletype):
-        samplearray = decrypt_samples
-        cpuperarray = decrypt_cpuper
-    
-    # Reset the mean cpu percentage variable
-    mean_cpuper = {}
-    # For cpu percentage samples
-    for eachalgo, cpuper in cpuperarray.items():
-        mean_cpuper[eachalgo] = 0
-        #Only if valid samples are available
-        if(len(cpuper) > 0):
-            cpuper = np.array(cpuper)
-            mean_cpuper[eachalgo] = statistics.fmean(cpuper)
-    
-    # For encryption and decryption times
-    for eachalgo, samples in samplearray.items():
-        #Only if valid samples are available
-        if(len(samples) > 0):
-            samples = np.array(samples)
-            mean_ns = statistics.fmean(samples)
-            p95 = np.percentile(samples, 95)
-            p99 = np.percentile(samples, 99)
-            jitter_ns = statistics.pstdev(samples)
-            cyclesperbyte = (mean_ns * CPU_FREQ_MHZ / 1000)/8
-
-            # Add data to the Metrics dictionary
-            perfmetrics[eachalgo] = {
-                "mean_ns" : '%.3f'%(mean_ns),
-                "p95" : '%.3f'%(p95),
-                "p99" : '%.3f'%(p99),
-                "jitter_ns" : '%.3f'%(jitter_ns),
-                "cycles/byte" : '%.3f'%(cyclesperbyte),
-                "cpu_percent" : '%.3f'%(mean_cpuper[eachalgo])
-            }
-    return perfmetrics
