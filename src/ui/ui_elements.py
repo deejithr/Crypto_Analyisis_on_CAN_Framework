@@ -456,7 +456,7 @@ class CANSimGUI(tb.Window):
             en_perfmetrics = self.getperfmetrics("encryption_samples")
             de_perfmetrics = self.getperfmetrics("decryption_samples")
             deadlinemiss[self.selected_algo.get()] = '%.3f'%self.getdeadlinemissratio()
-            
+           
             for eachAlgo in ENCRYPTION_ALGORITHMS:
                 # Only if the sample data is present
                 if(eachAlgo in en_perfmetrics.keys()):
@@ -582,7 +582,7 @@ class CANSimGUI(tb.Window):
 
         # Input validation logic to be added
 
-        # Set the CAn message and periodicity
+        # Set the CAN message and periodicity
         setcanmessage(canid, data, True)
         setmsgperiodicity(periodicity)
 

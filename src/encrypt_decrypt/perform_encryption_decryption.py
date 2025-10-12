@@ -18,6 +18,7 @@ import numpy as np
 import psutil, os
 import multiprocessing
 from multiprocessing import Process, Value, Manager
+from icecream import ic
 
 
 
@@ -78,11 +79,20 @@ def perform_encryption(data, encrypt_samples, encrypt_cpuper):
     encryptionendtime = time.perf_counter_ns()
     # Get the cpu percentage
     cpupercent_a = processid.cpu_percent(interval=None)
-    encrypt_cpuper[g_encryptionalgo].append((cpupercent_a - cpupercent_b)/psutil.cpu_count())
+    
+    # Storing the encryption cpu percent into the encrypt_cpuper shared variables
+    enccpupers = encrypt_cpuper[g_encryptionalgo]
+    enccpupers.append((cpupercent_a)/psutil.cpu_count())
+    encrypt_cpuper[g_encryptionalgo] = enccpupers
     
     #Time taken for encryption
     encryptiontime = (encryptionendtime - encryptionstarttime) / us_DURATION
-    encrypt_samples[g_encryptionalgo].append(encryptiontime)
+    
+    # Storing the encryption times into the encrypt_samples shared variables
+    enctimes = encrypt_samples[g_encryptionalgo]
+    enctimes.append(encryptiontime)
+    encrypt_samples[g_encryptionalgo] = enctimes
+
     
     return data, encryptiontime
 
@@ -120,11 +130,20 @@ def perform_decryption(data, decrypt_samples, decrypt_cpuper):
     decryptionendtime = time.perf_counter_ns()
     # Get the CPU Percentage
     cpupercent_a = processid.cpu_percent(interval=None)
-    decrypt_cpuper[g_encryptionalgo].append((cpupercent_a - cpupercent_b)/psutil.cpu_count())
+
+    # Storing the decryption cpu percent into the decrypt_cpuper shared variables
+    decpupers = decrypt_cpuper[g_encryptionalgo]
+    decpupers.append((cpupercent_a)/psutil.cpu_count())
+    decrypt_cpuper[g_encryptionalgo] = decpupers
 
     #Time taken for decryption
     decryptiontime = (decryptionendtime - decryptionstarttime) / us_DURATION
-    decrypt_samples[g_encryptionalgo].append(decryptiontime)
+    
+    # Storing the encryption times into the encrypt_samples shared variables
+    dectimes = decrypt_samples[g_encryptionalgo]
+    dectimes.append(decryptiontime)
+    decrypt_samples[g_encryptionalgo] = dectimes
+
     return data, decryptiontime, accepted
 
 def setencryptionalgo(algorithm):

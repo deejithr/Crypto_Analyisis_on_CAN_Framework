@@ -84,7 +84,7 @@ class Node:
             elif self.nodetype == NODE_RECEIVER:
                 self.process =  multiprocessing.Process(target=self.action_receiver, args=(console_queue,
                                                                                            simstate,
-                                                                                           crypt_cpuper, 
+                                                                                           crypt_samples, 
                                                                                            crypt_cpuper))
         except Exception as e:
             print("[Error] Unable to create process {e}")
@@ -266,8 +266,10 @@ class CanSim:
         #If the sender or receiver process is stil alive, terminate them
         if(self.CanbusList[0].nodes[0].process.is_alive()):
             self.CanbusList[0].nodes[0].process.terminate()
+            print("stop_simulation: Sender Node Stopped")
         if(self.CanbusList[0].nodes[1].process.is_alive()):
             self.CanbusList[0].nodes[1].process.terminate()
+            print("stop_simulation: Receiver Node Stopped")
         
 
 
