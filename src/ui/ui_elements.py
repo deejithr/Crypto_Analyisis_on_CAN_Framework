@@ -179,7 +179,7 @@ class CANSimGUI(tb.Window):
         canconf_frame = tb.Frame(cryalgo_tab, borderwidth=1, relief="raised")
         canconf_frame.pack(side="left", padx=10, fill=tk.X)
         canconf_label1 = tb.Label(canconf_frame, text="CAN Message Configuration:", 
-                                 bootstyle="info")
+                                 bootstyle="info", font=("Arial", 12, "bold"))
         canconf_label1.pack(padx=10, pady=10)
         
         canconf_subframe1 = tb.Frame(canconf_frame)
@@ -221,7 +221,7 @@ class CANSimGUI(tb.Window):
         cryalgo_frame = tb.Frame(cryalgo_mainframe)
         cryalgo_frame.pack(side="left", padx=10, pady=10, anchor=tk.NW)
         cryalgo_label = tb.Label(cryalgo_frame, text="Select Cryptographic Algorithm:", 
-                                 bootstyle="info")
+                                 bootstyle="info", font=("Arial", 12, "bold"))
         cryalgo_label.pack(side="top", padx=10, pady=10)
 
         # Radio button for selecting the algorithm
@@ -238,7 +238,7 @@ class CANSimGUI(tb.Window):
         cryalgo_descp_frame = tb.Frame(cryalgo_mainframe)
         cryalgo_descp_frame.pack(fill="both",padx=10, pady=20)
         self.algodescptext = ScrolledText(cryalgo_descp_frame, height=15, bootstyle="secondary", wrap=tk.WORD)
-        self.algodescptext = self.cipherdescpareainit(self.algodescptext)
+        self.algodescptext = self.descrpareainit(self.algodescptext)
         self.insertdescription("None")
         self.algodescptext.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
@@ -249,7 +249,7 @@ class CANSimGUI(tb.Window):
         perf_tab_subframe1 = tb.Frame(perf_tab)
         perf_tab_subframe1.pack(side="top", padx=10, fill=tk.X)
 
-        perf_label = tb.Label(perf_tab_subframe1, text="Performance Metrics", bootstyle="info", anchor = "w")
+        perf_label = tb.Label(perf_tab_subframe1, text="Performance Metrics", bootstyle="info", anchor = "w", font=("Arial", 14, "bold"))
         perf_label.pack(side="left",anchor=tk.NW, padx=10, pady=10)
 
         perf_tab_subframe2 = tb.Frame(perf_tab_subframe1)
@@ -288,8 +288,80 @@ class CANSimGUI(tb.Window):
         self.inserttotableview("No data available")
 
         # Tab 3: Encryption Scheme
-        compare_tab = tb.Frame(notebook)
-        notebook.add(compare_tab, text="Encryption Scheme")
+        encryption_scheme_tab = tb.Frame(notebook)
+        notebook.add(encryption_scheme_tab, text="Encryption Scheme")
+
+        # For encryption scheme enable/disable
+        es_onoff_frame = tb.Frame(encryption_scheme_tab)
+        es_onoff_frame.pack(side="top", padx=10, fill=tk.X)
+        es_onoff_labell1 = tb.Label(es_onoff_frame, text="Encryption Scheme", 
+                                 bootstyle="info", font=("Arial", 14, "bold"))
+        es_onoff_labell1.pack(side="left", padx=10, pady=10)
+        es_onoff_button1 = tb.Checkbutton(es_onoff_frame, bootstyle="success-round-toggle")
+        es_onoff_button1.pack(side="left", padx=10, pady=10)
+
+        encryption_scheme_masterframe1 = tb.Frame(encryption_scheme_tab)
+        encryption_scheme_masterframe1.pack(side="left", fill=tk.X)
+        
+        # For Encryption Scheme Configuration 
+        encryption_scheme_subframe1 = tb.Frame(encryption_scheme_masterframe1, borderwidth=1, relief="raised")
+        encryption_scheme_subframe1.pack(side="left", padx=10, fill=tk.X)
+
+        encryption_scheme_label1 = tb.Label(encryption_scheme_subframe1, text="Select Algorithms:", 
+                                 bootstyle="info", font=("Arial", 12, "bold"))
+        encryption_scheme_label1.pack(padx=10, pady=10)
+        
+        encschemeconf_childframe2 = tb.Frame(encryption_scheme_subframe1)
+        encschemeconf_childframe2.pack(fill=tk.X)
+        encschemeconf_label2 = tb.Label(encschemeconf_childframe2, text=("Nonce Derivation").ljust(16), 
+                                 bootstyle="info")
+        encschemeconf_label2.pack(side="left", padx=10, pady=10)
+        self.encschemeconf_combobox1 = tb.Combobox(encschemeconf_childframe2, bootstyle="danger")
+        self.encschemeconf_combobox1.pack(side="left", padx=10, pady=10)
+
+        encschemeconf_childframe3 = tb.Frame(encryption_scheme_subframe1)
+        encschemeconf_childframe3.pack(side="top", fill=tk.X)
+        encschemeconf_label3 = tb.Label(encschemeconf_childframe3, text=("Keystream Gen").ljust(16), 
+                                 bootstyle="info")
+        encschemeconf_label3.pack(side="left", padx=10, pady=10)
+        self.encschemeconf_combobox2 = tb.Combobox(encschemeconf_childframe3, bootstyle="danger")
+        self.encschemeconf_combobox2.pack(side="left", padx=10, pady=10)
+
+        encschemeconf_childframe4 = tb.Frame(encryption_scheme_subframe1)
+        encschemeconf_childframe4.pack(side="top", fill=tk.X)
+        encschemeconf_label4 = tb.Label(encschemeconf_childframe4, text=("MAC Generation").ljust(16), 
+                                 bootstyle="info")
+        encschemeconf_label4.pack(side="left", padx=10, pady=10)
+        self.encschemeconf_combobox3 = tb.Combobox(encschemeconf_childframe4, bootstyle="danger")
+        self.encschemeconf_combobox3.pack(side="left", padx=10, pady=10)
+
+        # For Encryption Scheme Counters 
+        encryption_scheme_subframe2 = tb.Frame(encryption_scheme_masterframe1)
+        encryption_scheme_subframe2.pack(side="left", padx=10, fill=tk.X)
+
+        encschemeconf_childframe5 = tb.Frame(encryption_scheme_subframe2)
+        encschemeconf_childframe5.pack(side="left", padx=10, fill=tk.X)
+        self.sendercounter_entry = tb.Entry(encschemeconf_childframe5,width=10)
+        self.sendercounter_entry.pack(side="top", padx=10, pady=10)
+        sendercounter_label = tb.Label(encschemeconf_childframe5, text="Sender Counter", 
+                                 bootstyle="info")
+        sendercounter_label.pack(side="top", padx=10, pady=10)
+
+        encschemeconf_childframe6 = tb.Frame(encryption_scheme_subframe2)
+        encschemeconf_childframe6.pack(side="left", padx=10, fill=tk.X)
+        self.receivercounter_entry = tb.Entry(encschemeconf_childframe6,width=10)
+        self.receivercounter_entry.pack(side="top", padx=10, pady=10)
+        receivercounter_label = tb.Label(encschemeconf_childframe6, text="Receiver Counter", 
+                                 bootstyle="info")
+        receivercounter_label.pack(side="top", padx=10, pady=10)
+
+        # For Encription Scheme Description
+        encryption_scheme_subframe3 = tb.Frame(encryption_scheme_masterframe1)
+        encryption_scheme_subframe3.pack(fill="both", padx=10)
+        self.encryptionschemedescp_entry = ScrolledText(encryption_scheme_subframe3, height=15, bootstyle="secondary", wrap=tk.WORD)
+        self.encryptionschemedescp_entry = self.descrpareainit(self.encryptionschemedescp_entry)
+        self.encryptionschemedescp_entry.pack(side="top", padx=10, pady=10, fill=BOTH)
+
 
         #Console for Printing the logs
         console_frame = tb.Frame(self)
@@ -413,7 +485,7 @@ class CANSimGUI(tb.Window):
         self.sender_console_text.delete("1.0", "end")
         self.recv_console_text.delete("1.0", "end")
 
-    def cipherdescpareainit(self, text_area):
+    def descrpareainit(self, text_area):
         '''To initialize the font properties for the ScrolledText Area'''
         # Define the fonts
         default_font = font.nametofont("TkDefaultFont")
