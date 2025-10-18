@@ -120,6 +120,36 @@ cipherdescription = {
     ],
 }
 
+# Description for Encryption Scheme
+encryptionschemedescription = {
+
+}
+
+# Algorithms that can be selected for Nonce Creation
+nonce_creation_gen_algo =[
+    "SPECK",
+    "PRESENT",
+    "RC4",
+    "TEA",
+    "AES",
+]
+
+# Algorithms that can be selected for KeyStream Gen
+keystream_gen_algo =[
+    "SPECK",
+    "PRESENT",
+    "RC4",
+    "TEA",
+    "AES",
+]
+
+# Algorithms that can be selected for MAC Creation
+mac_gen_algo =[
+    "AES128",
+    "HMAC"
+]
+
+
 ################################################################################
 # Globals
 ################################################################################
@@ -288,6 +318,13 @@ class CANSimGUI(tb.Window):
         self.inserttotableview("No data available")
 
         # Tab 3: Encryption Scheme
+        # Combobox variables
+        self.nonce_creation_option = tk.StringVar()
+        self.keystream_gen_option = tk.StringVar()
+        self.mac_gen_option = tk.StringVar()
+        # For encryption enabled/disabled state, initial state is false
+        self.encscheme_state = tk.BooleanVar(value=False)
+
         encryption_scheme_tab = tb.Frame(notebook)
         notebook.add(encryption_scheme_tab, text="Encryption Scheme")
 
@@ -297,7 +334,7 @@ class CANSimGUI(tb.Window):
         es_onoff_labell1 = tb.Label(es_onoff_frame, text="Encryption Scheme", 
                                  bootstyle="info", font=("Arial", 14, "bold"))
         es_onoff_labell1.pack(side="left", padx=10, pady=10)
-        es_onoff_button1 = tb.Checkbutton(es_onoff_frame, bootstyle="success-round-toggle")
+        es_onoff_button1 = tb.Checkbutton(es_onoff_frame, bootstyle="success-round-toggle", variable=self.encscheme_state)
         es_onoff_button1.pack(side="left", padx=10, pady=10)
 
         encryption_scheme_masterframe1 = tb.Frame(encryption_scheme_tab)
@@ -316,24 +353,30 @@ class CANSimGUI(tb.Window):
         encschemeconf_label2 = tb.Label(encschemeconf_childframe2, text=("Nonce Derivation").ljust(16), 
                                  bootstyle="info")
         encschemeconf_label2.pack(side="left", padx=10, pady=10)
-        self.encschemeconf_combobox1 = tb.Combobox(encschemeconf_childframe2, bootstyle="danger")
+        self.encschemeconf_combobox1 = tb.Combobox(encschemeconf_childframe2, textvariable=self.nonce_creation_option, bootstyle="danger", values=nonce_creation_gen_algo)
         self.encschemeconf_combobox1.pack(side="left", padx=10, pady=10)
+        self.nonce_creation_option.set(nonce_creation_gen_algo[0])
+        
 
         encschemeconf_childframe3 = tb.Frame(encryption_scheme_subframe1)
         encschemeconf_childframe3.pack(side="top", fill=tk.X)
         encschemeconf_label3 = tb.Label(encschemeconf_childframe3, text=("Keystream Gen").ljust(16), 
                                  bootstyle="info")
         encschemeconf_label3.pack(side="left", padx=10, pady=10)
-        self.encschemeconf_combobox2 = tb.Combobox(encschemeconf_childframe3, bootstyle="danger")
+        self.encschemeconf_combobox2 = tb.Combobox(encschemeconf_childframe3, textvariable=self.keystream_gen_option, bootstyle="danger", values=keystream_gen_algo)
         self.encschemeconf_combobox2.pack(side="left", padx=10, pady=10)
+        self.keystream_gen_option.set(keystream_gen_algo[0])
+        
 
         encschemeconf_childframe4 = tb.Frame(encryption_scheme_subframe1)
         encschemeconf_childframe4.pack(side="top", fill=tk.X)
         encschemeconf_label4 = tb.Label(encschemeconf_childframe4, text=("MAC Generation").ljust(16), 
                                  bootstyle="info")
         encschemeconf_label4.pack(side="left", padx=10, pady=10)
-        self.encschemeconf_combobox3 = tb.Combobox(encschemeconf_childframe4, bootstyle="danger")
+        self.encschemeconf_combobox3 = tb.Combobox(encschemeconf_childframe4, textvariable=self.mac_gen_option, bootstyle="danger", values=mac_gen_algo)
         self.encschemeconf_combobox3.pack(side="left", padx=10, pady=10)
+        self.mac_gen_option.set(mac_gen_algo[0])
+        
 
         # For Encryption Scheme Counters 
         encryption_scheme_subframe2 = tb.Frame(encryption_scheme_masterframe1)
@@ -448,7 +491,11 @@ class CANSimGUI(tb.Window):
             self.startsimcallback(ui_senderqueue, ui_receiverqueue, simulationstate, 
                                   deadlinemisscounts, sentmessagescount,
                                   encrypt_samples, encrypt_cpuper,
-                                  decrypt_samples, decrypt_cpuper)
+                                  decrypt_samples, decrypt_cpuper,
+                                  self.encscheme_state,
+                                  self.nonce_creation_option,
+                                  self.keystream_gen_option,
+                                  self.mac_gen_option)
 
     def printtosenderconsole(self):
         '''Function to print into the Sender Console text box'''

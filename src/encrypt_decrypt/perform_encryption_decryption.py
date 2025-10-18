@@ -54,7 +54,11 @@ g_encryption = None
 ################################################################################
 # Functions
 ################################################################################
-def perform_encryption(data, encrypt_samples, encrypt_cpuper):
+def perform_encryption(data, encrypt_samples, encrypt_cpuper,
+                       encscheme_state,
+                       nonce_creation_option,
+                       keystream_gen_option,
+                       mac_gen_option):
     ''' Perfrom encryption using the selected Algorithm'''
     # Start Measurement
     encryptiontime = 0
@@ -101,7 +105,11 @@ def isMessageAccepted(data):
     return DECRYPT_OK
 
 
-def perform_decryption(data, decrypt_samples, decrypt_cpuper):
+def perform_decryption(data, decrypt_samples, decrypt_cpuper,
+                       encscheme_state,
+                       nonce_creation_option,
+                       keystream_gen_option,
+                       mac_gen_option):
     '''Perform Decryption using the selected Algorithm'''
     accepted = DECRYPT_NOT_OK
     
