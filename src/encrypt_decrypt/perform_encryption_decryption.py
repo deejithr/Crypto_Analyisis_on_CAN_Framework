@@ -40,7 +40,7 @@ CONVERT_NS_TO_S = 1/ 1_000_000_000
 CONVERT_NS_TO_MS = 1/ 1_000_000
 
 #Encryption Algorithms
-ENCRYPTION_ALGORITHMS = ["None", "RC4", "SPECK", "TEA", "PRESENT", "AES128" ]
+ENCRYPTION_ALGORITHMS = ["None", "RC4", "SPECK", "TEA", "PRESENT", "AES128", "ENCRYPTION_SCHEME" ]
 
 ################################################################################
 # Globals
@@ -51,14 +51,74 @@ g_encryptionalgo = "None"
 #Encryption Class Object
 g_encryption = None
 
+#Global objects for Encryption Scheme
+g_noncecreation = None
+g_keystreamgen = None
+g_macgeneration = None
+
+g_noncealgo = None
+g_keystreamalgo = None 
+g_macgenalgo = None
+
+g_canid = 0
+
+g_sendercounter = {}
+g_receivercounter = {}
+
 ################################################################################
 # Functions
 ################################################################################
+def encrypt(algo, encobj, data): 
+    '''Function to encrypt data based on the algorithm'''
+    if("RC4" == algo):
+        data = encobj.rc4encrypt(data)
+    elif("SPECK" == algo):
+        data = encobj.speckencrypt(data)
+    elif("PRESENT" == algo):
+        data = encobj.presentencrypt(data)
+    else:
+        pass
+    return data
+
+def decrypt(algo, encobj, data): 
+    '''Function to decrypt data based on the algorithm'''
+    if("RC4" == algo):
+        data = encobj.rc4decrypt(data)
+    elif("SPECK" == algo):
+        data = encobj.speckdecrypt(data)
+    elif("PRESENT" == algo):
+        data = encobj.presentdecrypt(data)
+    else:
+        pass
+    return data
+
+def encryption_scheme_encrypt(data):
+    global g_canid, g_keystreamgen, g_noncecreation, g_macgeneration
+    global g_noncealgo, g_keystreamalgo, g_macgenalgo
+    
+    #Get the counter 
+    if(g_canid not in g_sendercounter.keys()):
+        g_sendercounter[g_canid] = 0
+    
+    #Append the counter and CANID to create input for Nonce creation
+    nonceinput = g_canid.to_bytes(4,'big') + g_sendercounter[g_canid].to_bytes(4,'big')
+    #Encrypt this Nonce using Nonce-encrytpion Algorithm
+    Nonce = encrypt(g_noncealgo, g_noncecreation, nonceinput)
+    # Generate Keystream with this Nonce
+    S = encrypt(g_keystreamalgo, g_keystreamgen, Nonce)
+    #Encrypted Payload
+    for byte_a, byte_b in zip(data, S):
+        C = byte_a ^ byte_b
+
+    #Increment the counter 
+    g_sendercounter[g_canid] += 1
+
+    #Perform MAC generation
+    return C
+
 def perform_encryption(data, encrypt_samples, encrypt_cpuper,
-                       encscheme_state,
-                       nonce_creation_option,
-                       keystream_gen_option,
-                       mac_gen_option):
+                       encscheme_state, canid, isextended
+                       ):
     ''' Perfrom encryption using the selected Algorithm'''
     # Start Measurement
     encryptiontime = 0
@@ -70,14 +130,12 @@ def perform_encryption(data, encrypt_samples, encrypt_cpuper,
     #Implementation pending for other algorithms
     # Call encryption function depending on the algorithm
     # to get the encrypted data
-    if("RC4" == g_encryptionalgo):
-        data = g_encryption.rc4encrypt(data, len(data))
-    elif("SPECK" == g_encryptionalgo):
-        data = g_encryption.speckencrypt(data)
-    elif("PRESENT" == g_encryptionalgo):
-        data = g_encryption.presentencrypt(data)
+    
+    # if Encryption Scheme enabled
+    if(True == encscheme_state.get()):
+        data = encryption_scheme_encrypt(data)
     else:
-        pass
+        data = encrypt(g_encryptionalgo, g_encryption, data)
     
     # Stop Measurement
     encryptionendtime = time.perf_counter_ns()
@@ -106,10 +164,8 @@ def isMessageAccepted(data):
 
 
 def perform_decryption(data, decrypt_samples, decrypt_cpuper,
-                       encscheme_state,
-                       nonce_creation_option,
-                       keystream_gen_option,
-                       mac_gen_option):
+                       encscheme_state, canid, isextended
+                       ):
     '''Perform Decryption using the selected Algorithm'''
     accepted = DECRYPT_NOT_OK
     
@@ -126,14 +182,12 @@ def perform_decryption(data, decrypt_samples, decrypt_cpuper,
         #Implementation pending for other algorithms
         # Call decrytion function depending on the algorithm
         # to decrypt the data
-        if("RC4" == g_encryptionalgo):
-            data = g_encryption.rc4decrypt(data, len(data))
-        elif("SPECK" == g_encryptionalgo):
-            data = g_encryption.speckdecrypt(data)
-        elif("PRESENT" == g_encryptionalgo):
-            data = g_encryption.presentdecrypt(data)
+        # Check if Encryption Scheme enabled
+        if(True == encscheme_state.get()):
+            data = encryption_scheme_decrypt(data)
         else:
-            pass
+            data = decrypt(g_encryptionalgo, g_encryption, data)
+    
     # End Measurement
     decryptionendtime = time.perf_counter_ns()
     # Get the CPU Percentage
@@ -154,6 +208,53 @@ def perform_decryption(data, decrypt_samples, decrypt_cpuper,
 
     return data, decryptiontime, accepted
 
+def initencryptionobject(algo):
+    '''Initialize the encryption Object based on the algorithm passed'''
+    encobj = None
+    if ("RC4" == algo):
+        encobj = RC4(RC4_KEY, RC4_S_ARRAY_SIZE)
+    elif ("SPECK" == algo):
+        encobj = SPECK(SPECK_KEY)
+    elif ("PRESENT" == algo):
+        encobj = PRESENT()
+    else:
+        pass
+    return encobj
+
+def initializeencryptionscheme(nonce_algo,
+                               keystream_gen_algo,
+                               mac_gen_algo,
+                               canid):
+    '''Function to initialize different encryption objects for encryption scheme'''
+    global g_noncecreation, g_keystreamgen, g_macgeneration, g_canid
+    global g_noncealgo, g_keystreamalgo, g_macgenalgo
+    
+
+    #Initilaize the objects for encryption scheme
+    g_noncealgo = nonce_algo
+    g_keystreamalgo = keystream_gen_algo
+    g_macgenalgo = mac_gen_algo
+    g_noncecreation = initencryptionobject(nonce_algo)
+    g_keystreamgen = initencryptionobject(keystream_gen_algo)
+    g_macgeneration = initencryptionobject(mac_gen_algo)
+    g_canid = canid
+
+def deinitencryptionscheme():
+    '''Function to de-init different encryption objects for encryption scheme'''
+    global g_noncecreation, g_keystreamgen, g_macgeneration, g_canid
+    global g_noncealgo, g_keystreamalgo, g_macgenalgo
+
+    #De-init the objects for encryption scheme
+    g_noncecreation = None
+    g_keystreamgen = None
+    g_macgeneration = None
+    g_canid = None
+
+    g_noncealgo = None
+    g_keystreamalgo = None
+    g_macgenalgo = None
+
+
 def setencryptionalgo(algorithm):
     '''Callback called on selecting the encyrption algorithm'''
     global g_encryptionalgo, g_encryption
@@ -161,11 +262,7 @@ def setencryptionalgo(algorithm):
     # Set the selected algorithm to the global variable
     g_encryptionalgo = algorithm
 
-    if ("RC4" == g_encryptionalgo):
-        g_encryption = RC4(RC4_KEY, RC4_S_ARRAY_SIZE)
-    elif ("SPECK" == g_encryptionalgo):
-        g_encryption = SPECK(SPECK_KEY)
-    elif ("PRESENT" == g_encryptionalgo):
-        g_encryption = PRESENT()
-    else:
-        pass
+    #Initialize g_encryption object, based on the algorithm selected
+    g_encryption = initencryptionobject(g_encryptionalgo)
+
+    

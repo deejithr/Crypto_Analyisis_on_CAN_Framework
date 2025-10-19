@@ -62,9 +62,10 @@ class RC4:
             keystream.append(t_byte)
         return keystream
 
-    def rc4encrypt(self, plaintext, datalen):
+    def rc4encrypt(self, plaintext):
         '''For RC4 encryption'''
         ciphertext = []
+        datalen = len(plaintext)
         # call Key Scheduling algorithm
         self.keyschedulealgo()
         # generate Keystream 
@@ -75,9 +76,9 @@ class RC4:
         # return encrypted data
         return ciphertext
     
-    def rc4decrypt(self, ciphertext, datalen):
+    def rc4decrypt(self, ciphertext):
         '''For RC4 decryption'''
-        return self.rc4encrypt(ciphertext,datalen)
+        return self.rc4encrypt(ciphertext)
 
 
 ################################################################################

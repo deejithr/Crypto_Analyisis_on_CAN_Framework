@@ -31,7 +31,7 @@ STARTED = 0
 STOPPED = 1
 
 # Periodicity to print messages in the console
-CONSOLE_LOGGING_PERIOD = 10
+CONSOLE_LOGGING_PERIOD = 200
 
 # Description information for each cipher
 cipherdescription = {
@@ -136,10 +136,10 @@ nonce_creation_gen_algo =[
 
 # Algorithms that can be selected for KeyStream Gen
 keystream_gen_algo =[
-    "SPECK",
     "PRESENT",
-    "RC4",
+    "SPECK",
     "TEA",
+    "RC4",
     "AES",
 ]
 
@@ -259,11 +259,12 @@ class CANSimGUI(tb.Window):
         self.rb_cryalgo_tab = []
         index = 0
         for algo in ENCRYPTION_ALGORITHMS:
-            self.rb_cryalgo_tab.append(tb.Radiobutton(cryalgo_frame, text=algo, variable=self.selected_algo, 
-                                            value=algo, bootstyle="info"))
-            self.rb_cryalgo_tab[index].pack(side="top", anchor="w", padx=20, pady=5)
-            index = index + 1
-        
+            # Omit radio button for Encryption Scheme
+            if("ENCRYPTION_SCHEME" != algo):
+                self.rb_cryalgo_tab.append(tb.Radiobutton(cryalgo_frame, text=algo, variable=self.selected_algo, 
+                                                value=algo, bootstyle="info"))
+                self.rb_cryalgo_tab[index].pack(side="top", anchor="w", padx=20, pady=5)
+                index = index + 1
 
         cryalgo_descp_frame = tb.Frame(cryalgo_mainframe)
         cryalgo_descp_frame.pack(fill="both",padx=10, pady=20)
@@ -333,9 +334,11 @@ class CANSimGUI(tb.Window):
         es_onoff_frame.pack(side="top", padx=10, fill=tk.X)
         es_onoff_labell1 = tb.Label(es_onoff_frame, text="Encryption Scheme", 
                                  bootstyle="info", font=("Arial", 14, "bold"))
-        es_onoff_labell1.pack(side="left", padx=10, pady=10)
-        es_onoff_button1 = tb.Checkbutton(es_onoff_frame, bootstyle="success-round-toggle", variable=self.encscheme_state)
-        es_onoff_button1.pack(side="left", padx=10, pady=10)
+        es_onoff_labell1.pack(side="left", padx=10, pady=5)
+        es_onoff_button1 = tb.Checkbutton(es_onoff_frame, bootstyle="success-round-toggle", 
+                                          variable=self.encscheme_state, 
+                                          command=self.toggleencschemestate)
+        es_onoff_button1.pack(side="left", padx=10, pady=5)
 
         encryption_scheme_masterframe1 = tb.Frame(encryption_scheme_tab)
         encryption_scheme_masterframe1.pack(side="left", fill=tk.X)
@@ -346,15 +349,18 @@ class CANSimGUI(tb.Window):
 
         encryption_scheme_label1 = tb.Label(encryption_scheme_subframe1, text="Select Algorithms:", 
                                  bootstyle="info", font=("Arial", 12, "bold"))
-        encryption_scheme_label1.pack(padx=10, pady=10)
+        encryption_scheme_label1.pack(padx=10, pady=5)
         
         encschemeconf_childframe2 = tb.Frame(encryption_scheme_subframe1)
         encschemeconf_childframe2.pack(fill=tk.X)
         encschemeconf_label2 = tb.Label(encschemeconf_childframe2, text=("Nonce Derivation").ljust(16), 
                                  bootstyle="info")
-        encschemeconf_label2.pack(side="left", padx=10, pady=10)
-        self.encschemeconf_combobox1 = tb.Combobox(encschemeconf_childframe2, textvariable=self.nonce_creation_option, bootstyle="danger", values=nonce_creation_gen_algo)
-        self.encschemeconf_combobox1.pack(side="left", padx=10, pady=10)
+        encschemeconf_label2.pack(side="left", padx=10, pady=5)
+        self.encschemeconf_combobox1 = tb.Combobox(encschemeconf_childframe2, 
+                                                   textvariable=self.nonce_creation_option, 
+                                                   bootstyle="danger", 
+                                                   values=nonce_creation_gen_algo)
+        self.encschemeconf_combobox1.pack(side="left", padx=10, pady=5)
         self.nonce_creation_option.set(nonce_creation_gen_algo[0])
         
 
@@ -362,9 +368,12 @@ class CANSimGUI(tb.Window):
         encschemeconf_childframe3.pack(side="top", fill=tk.X)
         encschemeconf_label3 = tb.Label(encschemeconf_childframe3, text=("Keystream Gen").ljust(16), 
                                  bootstyle="info")
-        encschemeconf_label3.pack(side="left", padx=10, pady=10)
-        self.encschemeconf_combobox2 = tb.Combobox(encschemeconf_childframe3, textvariable=self.keystream_gen_option, bootstyle="danger", values=keystream_gen_algo)
-        self.encschemeconf_combobox2.pack(side="left", padx=10, pady=10)
+        encschemeconf_label3.pack(side="left", padx=10, pady=5)
+        self.encschemeconf_combobox2 = tb.Combobox(encschemeconf_childframe3, 
+                                                   textvariable=self.keystream_gen_option, 
+                                                   bootstyle="danger", 
+                                                   values=keystream_gen_algo)
+        self.encschemeconf_combobox2.pack(side="left", padx=10, pady=5)
         self.keystream_gen_option.set(keystream_gen_algo[0])
         
 
@@ -372,11 +381,16 @@ class CANSimGUI(tb.Window):
         encschemeconf_childframe4.pack(side="top", fill=tk.X)
         encschemeconf_label4 = tb.Label(encschemeconf_childframe4, text=("MAC Generation").ljust(16), 
                                  bootstyle="info")
-        encschemeconf_label4.pack(side="left", padx=10, pady=10)
-        self.encschemeconf_combobox3 = tb.Combobox(encschemeconf_childframe4, textvariable=self.mac_gen_option, bootstyle="danger", values=mac_gen_algo)
-        self.encschemeconf_combobox3.pack(side="left", padx=10, pady=10)
+        encschemeconf_label4.pack(side="left", padx=10, pady=5)
+        self.encschemeconf_combobox3 = tb.Combobox(encschemeconf_childframe4, 
+                                                   textvariable=self.mac_gen_option, 
+                                                   bootstyle="danger", values=mac_gen_algo)
+        self.encschemeconf_combobox3.pack(side="left", padx=10, pady=5)
         self.mac_gen_option.set(mac_gen_algo[0])
-        
+
+        self.encschemeupdatebtn = tb.Button(encryption_scheme_subframe1, text="Update",
+                                   bootstyle="info", command=self.do_encschemeupdate)
+        self.encschemeupdatebtn.pack(anchor=tk.SE, padx=10, pady=5)
 
         # For Encryption Scheme Counters 
         encryption_scheme_subframe2 = tb.Frame(encryption_scheme_masterframe1)
@@ -402,9 +416,9 @@ class CANSimGUI(tb.Window):
         encryption_scheme_subframe3 = tb.Frame(encryption_scheme_masterframe1)
         encryption_scheme_subframe3.pack(fill="both", padx=10)
         self.encryptionschemedescp_entry = ScrolledText(encryption_scheme_subframe3, height=15, bootstyle="secondary", wrap=tk.WORD)
+        # Initialize font properties for the encryption scheme description area
         self.encryptionschemedescp_entry = self.descrpareainit(self.encryptionschemedescp_entry)
         self.encryptionschemedescp_entry.pack(side="top", padx=10, pady=10, fill=BOTH)
-
 
         #Console for Printing the logs
         console_frame = tb.Frame(self)
@@ -432,6 +446,9 @@ class CANSimGUI(tb.Window):
         self.recv_console_text.pack(side="left", fill="both", expand=True, padx=10, pady=10)
         self.recv_console_text.tag_config("green_bold", foreground="green", font=("Arial", 10, "bold"))
         self.recv_console_text.tag_config("red_bold", foreground="red", font=("Arial", 10, "bold"))
+
+        # Call to initialize or de-init Encryption Scheme
+        self.toggleencschemestate()
         
         #------------------------------------------------------------------------------------------#
 
@@ -492,10 +509,8 @@ class CANSimGUI(tb.Window):
                                   deadlinemisscounts, sentmessagescount,
                                   encrypt_samples, encrypt_cpuper,
                                   decrypt_samples, decrypt_cpuper,
-                                  self.encscheme_state,
-                                  self.nonce_creation_option,
-                                  self.keystream_gen_option,
-                                  self.mac_gen_option)
+                                  self.encscheme_state
+                                  )
 
     def printtosenderconsole(self):
         '''Function to print into the Sender Console text box'''
@@ -705,7 +720,29 @@ class CANSimGUI(tb.Window):
         setcanmessage(canid, data, True)
         setmsgperiodicity(periodicity)
 
+    def do_encschemeupdate(self):
+        ''' Updates the encryption scheme based on new configuration '''
+        # Check if the encyrption scheme is enabled
+        initializeencryptionscheme(self.nonce_creation_option.get(),
+                                   self.keystream_gen_option.get(),
+                                   self.mac_gen_option.get(),
+                                   int(self.canconf_entry1.get(),16))
+        
+    def toggleencschemestate(self):
+        '''Callback triggered on changing encryption scheme state'''
+        # Check if the encyrption scheme is enabled
+        if(True == self.encscheme_state.get()):
+            # Initialize the objects for encryption scheme
+            initializeencryptionscheme(self.nonce_creation_option.get(),
+                                   self.keystream_gen_option.get(),
+                                   self.mac_gen_option.get(),
+                                   int(self.canconf_entry1.get(),16))
+        else: # Encryption scheme disabled
+            #Deinitialize the objects
+            deinitencryptionscheme()
+
     def resetsamples(self, algorithm):
+        '''Function to reset the samples for encryption and decryption'''
         global decrypt_samples, encrypt_cpuper
         global encrypt_samples, decrypt_cpuper
 
@@ -731,14 +768,15 @@ class CANSimGUI(tb.Window):
             cpuperarray = decrypt_cpuper
 
         # Reset the mean cpu percentage variable
-        mean_cpuper = {}
+        median_cpuper = {}
         # For cpu percentage samples
         for eachalgo, cpuper in cpuperarray.items():
-            mean_cpuper[eachalgo] = 0
+            median_cpuper[eachalgo] = 0
             #Only if valid samples are available
             if(len(cpuper) > 0):
                 cpuper = np.array(cpuper)
-                mean_cpuper[eachalgo] = statistics.fmean(cpuper)
+                # Calculate the median
+                median_cpuper[eachalgo] = np.median(cpuper)
 
         # For encryption and decryption times
         for eachalgo, samples in samplearray.items():
@@ -758,15 +796,9 @@ class CANSimGUI(tb.Window):
                     "p99" : '%.3f'%(p99),
                     "jitter_ns" : '%.3f'%(jitter_ns),
                     "cycles/byte" : '%.3f'%(cyclesperbyte),
-                    "cpu_percent" : '%.3f'%(mean_cpuper[eachalgo])
+                    "cpu_percent" : '%.3f'%(median_cpuper[eachalgo])
                 }
         return perfmetrics
-
-
-        
-
-
-
 
 ################################################################################
 # Functions

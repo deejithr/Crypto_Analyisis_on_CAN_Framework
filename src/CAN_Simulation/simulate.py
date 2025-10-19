@@ -71,10 +71,7 @@ class Node:
                       sentmsgc,
                       crypt_samples, 
                       crypt_cpuper,
-                      encscheme_state,
-                      nonce_creation_option,
-                      keystream_gen_option,
-                      mac_gen_option
+                      encscheme_state
                       ):
         '''Function to create process for the Node'''
         # Create process based on node type
@@ -86,19 +83,15 @@ class Node:
                                                                                         sentmsgc,
                                                                                         crypt_samples, 
                                                                                         crypt_cpuper,
-                                                                                        encscheme_state,
-                                                                                        nonce_creation_option,
-                                                                                        keystream_gen_option,
-                                                                                        mac_gen_option))
+                                                                                        encscheme_state
+                                                                                        ))
             elif self.nodetype == NODE_RECEIVER:
                 self.process =  multiprocessing.Process(target=self.action_receiver, args=(console_queue,
                                                                                            simstate,
                                                                                            crypt_samples, 
                                                                                            crypt_cpuper,
-                                                                                           encscheme_state,
-                                                                                        nonce_creation_option,
-                                                                                        keystream_gen_option,
-                                                                                        mac_gen_option))
+                                                                                           encscheme_state
+                                                                                        ))
         except Exception as e:
             print("[Error] Unable to create process {e}")
             import traceback
@@ -114,10 +107,8 @@ class Node:
                       deadlinemisscounts, 
                       sentmessagescount,
                       encrypt_samples, encrypt_cpuper,
-                      encscheme_state,
-                      nonce_creation_option,
-                      keystream_gen_option,
-                      mac_gen_option):
+                      encscheme_state
+                      ):
         '''Function for actions to be performed by the sender'''
         global can_msg, DELAY_IN_S
         global pid_sender
@@ -144,9 +135,9 @@ class Node:
                                                                    encrypt_samples, 
                                                                    encrypt_cpuper,
                                                                    encscheme_state,
-                                                                   nonce_creation_option,
-                                                                   keystream_gen_option,
-                                                                   mac_gen_option)
+                                                                   can_msg.arbritration_id,
+                                                                   can_msg.isextended
+                                                                   )
                 print("Sender: Data before Encryption:  " + str(can_msg.data))
 
                 msg = can.Message(
@@ -168,14 +159,18 @@ class Node:
 
                 if (True == DEBUG_PRINT):
                     print("Period: ", (now - prev) * CONVERT_NS_TO_MS)
+                    print("now : ", now)
+                    print("deadline : ", deadline)
 
                 if now > deadline:
                     deadlinemisscounts.value += 1
                     if (True == DEBUG_PRINT):
                         print("Deadline missed counts : ", deadlinemisscounts.value)
+                        
 
                 # Next Execution Window
                 next_execution_ns += int(DELAY_IN_S * CONVERT_S_TO_NS)
+                prev = now
 
                 # to send the message with the configured delay, Calculate how long to sleep
                 time_to_sleep_ns = next_execution_ns - time.perf_counter_ns()
@@ -193,10 +188,8 @@ class Node:
         self.nodestatus = NODE_DEINITIALIZED
         
     def action_receiver(self, console_queue, simulationstate, decrypt_samples, decrypt_cpuper,
-                        encscheme_state,
-                        nonce_creation_option,
-                        keystream_gen_option,
-                        mac_gen_option):
+                        encscheme_state
+                        ):
         '''Function for actions to be performed by the Receiver'''
         global pid_receiver
         print("Receiver Node: " + self.nodename +  " Initiated")
@@ -218,9 +211,9 @@ class Node:
                                                                                  decrypt_samples, 
                                                                                  decrypt_cpuper,
                                                                                  encscheme_state,
-                                                                                 nonce_creation_option,
-                                                                                 keystream_gen_option,
-                                                                                 mac_gen_option)
+                                                                                 received.arbitration_id,
+                                                                                 received.is_extended_id
+                                                                                 )
                     acceptancestate = "  ✅" if DECRYPT_OK == accepted else "  ❌"
                     print("Receiver: Data after Decryption:   " + str(list(decrypteddata)))
                     console_queue.put(f"Received: {received}    t_decrypt: {decryptiontime:.3f} us {acceptancestate}")
@@ -264,8 +257,7 @@ class CanSim:
                          simulationstate, deadlinemisscounts, sentmessagescount,
                          encrypt_samples, encrypt_cpuper,
                          decrypt_samples, decrypt_cpuper,
-                         encscheme_state, nonce_creation_option,
-                         keystream_gen_option, mac_gen_option):
+                         encscheme_state):
         '''This function starts the simulation'''
 
         # Set the simulation State to TRUE
@@ -277,8 +269,7 @@ class CanSim:
                              simulationstate, deadlinemisscounts, sentmessagescount,
                              encrypt_samples, encrypt_cpuper,
                              decrypt_samples, decrypt_cpuper,
-                             encscheme_state, nonce_creation_option,
-                             keystream_gen_option, mac_gen_option)
+                             encscheme_state)
 
     
     def stop_simulation(self, simulationstate):
@@ -312,19 +303,16 @@ class CanSim:
 def instantiatenodes(objbus, squeue, rqueue, simstate, deadlinemc, 
                      sentmsgc, encrypt_samples, encrypt_cpuper, 
                      decrypt_samples, decrypt_cpuper,
-                     encscheme_state, nonce_creation_option,
-                     keystream_gen_option, mac_gen_option):
+                     encscheme_state):
     '''Function to start threads for each Node in the Can bus'''
     for eachNode in objbus.nodes:
         #Check the Node type
         if(NODE_SENDER == eachNode.nodetype):
             eachNode.createprocess(squeue, simstate, deadlinemc, sentmsgc, encrypt_samples, encrypt_cpuper,
-                                   encscheme_state, nonce_creation_option,
-                                   keystream_gen_option, mac_gen_option)
+                                   encscheme_state)
         else:
             eachNode.createprocess(rqueue, simstate, None, None, decrypt_samples, decrypt_cpuper,
-                                   encscheme_state, nonce_creation_option,
-                                   keystream_gen_option, mac_gen_option)
+                                   encscheme_state)
 
 def setcanmessage(canid, data, isExtended):
     '''Function sets the parameters for CAN Message'''
