@@ -14,6 +14,8 @@ import time
 from Crypto_Algorithms.RC4 import *
 from Crypto_Algorithms.SPECK import *
 from Crypto_Algorithms.PRESENT import *
+from Crypto_Algorithms.xTEA import *
+from Crypto_Algorithms.AES import *
 import numpy as np
 import psutil, os
 import multiprocessing
@@ -40,7 +42,7 @@ CONVERT_NS_TO_S = 1/ 1_000_000_000
 CONVERT_NS_TO_MS = 1/ 1_000_000
 
 #Encryption Algorithms
-ENCRYPTION_ALGORITHMS = ["None", "RC4", "SPECK", "TEA", "PRESENT", "AES128", "ENCRYPTION_SCHEME" ]
+ENCRYPTION_ALGORITHMS = ["None", "RC4", "SPECK", "xTEA", "PRESENT", "AES128", "ENCRYPTION_SCHEME" ]
 
 ################################################################################
 # Globals
@@ -76,6 +78,10 @@ def encrypt(algo, encobj, data):
         data = encobj.speckencrypt(data)
     elif("PRESENT" == algo):
         data = encobj.presentencrypt(data)
+    elif("xTEA" == algo):
+        data = encobj.encrypt_xtea(data)
+    elif("AES" == algo):
+        data = encobj.aesencrypt(data)
     else:
         pass
     return data
@@ -88,6 +94,10 @@ def decrypt(algo, encobj, data):
         data = encobj.speckdecrypt(data)
     elif("PRESENT" == algo):
         data = encobj.presentdecrypt(data)
+    elif("xTEA" == algo):
+        data = encobj.decrypt_xtea(data)
+    elif("AES" == algo):
+        data = encobj.aesdecrypt(data)
     else:
         pass
     return data
@@ -217,6 +227,8 @@ def initencryptionobject(algo):
         encobj = SPECK(SPECK_KEY)
     elif ("PRESENT" == algo):
         encobj = PRESENT()
+    elif ("xTEA" == algo):
+        encobj = xTEA(XTEA_KEY)
     else:
         pass
     return encobj

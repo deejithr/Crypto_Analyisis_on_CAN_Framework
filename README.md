@@ -15,7 +15,7 @@ The following encryption algorithms are currently selected. (TBD)
  - SPECK 64/128
 	 - designed for IOT devices, hence suitable for CAN usecase
 	 - faster and smaller than AES or SHA
- - Tiny Encryption Algorithm (TEA)
+ - Extended Tiny Encryption Algorithm (xTEA)
 	 - fast on smaller MCUs
 	 - included for benchmarking purposes
 	 - maybe replaced with PRESENT algorithm

@@ -80,8 +80,8 @@ cipherdescription = {
         ["\nBy performing the inverse of each operation the plaintext can be recovered.", "default"]
     ],
 
-    "TEA" : [
-        ["TEA\n", "heading"],
+    "xTEA" : [
+        ["xTEA\n", "heading"],
         ["Tiny Encryption Algorithm\n", "default"],
         ["To be implemented\n\n", "default"],
         ["Raw data Transmitted", "default"]
@@ -130,7 +130,7 @@ nonce_creation_gen_algo =[
     "SPECK",
     "PRESENT",
     "RC4",
-    "TEA",
+    "xTEA",
     "AES",
 ]
 
@@ -138,7 +138,7 @@ nonce_creation_gen_algo =[
 keystream_gen_algo =[
     "PRESENT",
     "SPECK",
-    "TEA",
+    "xTEA",
     "RC4",
     "AES",
 ]

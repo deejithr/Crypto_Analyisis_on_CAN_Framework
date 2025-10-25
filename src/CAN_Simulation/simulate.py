@@ -121,7 +121,7 @@ class Node:
         pid_sender = os.getpid()
         os.sched_setaffinity(pid_sender, {1})
 
-        #For deadlinemiss counts
+        # For deadlinemiss counts
         # Reset the deadline miss counts
         deadlinemisscounts.value = 0
         sentmessagescount.value = 0
