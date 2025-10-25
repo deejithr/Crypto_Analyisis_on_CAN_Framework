@@ -776,7 +776,7 @@ class CANSimGUI(tb.Window):
             if(len(cpuper) > 0):
                 cpuper = np.array(cpuper)
                 # Calculate the median
-                median_cpuper[eachalgo] = np.median(cpuper)
+                median_cpuper[eachalgo] = np.percentile(cpuper,95)
 
         # For encryption and decryption times
         for eachalgo, samples in samplearray.items():

@@ -80,7 +80,7 @@ def encrypt(algo, encobj, data):
         data = encobj.presentencrypt(data)
     elif("xTEA" == algo):
         data = encobj.encrypt_xtea(data)
-    elif("AES" == algo):
+    elif("AES128" == algo):
         data = encobj.aesencrypt(data)
     else:
         pass
@@ -96,7 +96,7 @@ def decrypt(algo, encobj, data):
         data = encobj.presentdecrypt(data)
     elif("xTEA" == algo):
         data = encobj.decrypt_xtea(data)
-    elif("AES" == algo):
+    elif("AES128" == algo):
         data = encobj.aesdecrypt(data)
     else:
         pass
@@ -229,6 +229,8 @@ def initencryptionobject(algo):
         encobj = PRESENT()
     elif ("xTEA" == algo):
         encobj = xTEA(XTEA_KEY)
+    elif ("AES128" == algo):
+        encobj = AES(AES_KEY)
     else:
         pass
     return encobj
