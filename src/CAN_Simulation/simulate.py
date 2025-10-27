@@ -126,7 +126,8 @@ class Node:
         deadlinemisscounts.value = 0
         sentmessagescount.value = 0
 
-        next_execution_ns = prev = time.perf_counter_ns()
+        next_execution_ns = prev = 0
+        firstCall = True
 
         while True == simulationstate.value:
             try:
@@ -155,30 +156,38 @@ class Node:
 
                 # Get the current timestamp
                 now = time.perf_counter_ns()
+                if(True == firstCall):
+                    next_execution_ns = prev = time.perf_counter_ns()
                 deadline = next_execution_ns + int(DELAY_IN_S * CONVERT_S_TO_NS)
 
-                if (True == DEBUG_PRINT):
-                    print("Period: ", (now - prev) * CONVERT_NS_TO_MS)
-                    print("now : ", now)
-                    print("deadline : ", deadline)
-
-                if now > deadline:
-                    deadlinemisscounts.value += 1
+                if(True == firstCall):
+                    time.sleep(DELAY_IN_S)
+                    firstCall = False
+                else:
                     if (True == DEBUG_PRINT):
-                        print("Deadline missed counts : ", deadlinemisscounts.value)
-                        
+                        print("Period: ", (now - prev) * CONVERT_NS_TO_MS)
+                        print("now : ", now)
+                        print("deadline : ", deadline)
 
-                # Next Execution Window
-                next_execution_ns += int(DELAY_IN_S * CONVERT_S_TO_NS)
-                prev = now
+                    # Consider Deadline missed, only if the value exceeds more 
+                    # than 1ms from the period
+                    if ((now > deadline) and
+                        (now - deadline) > 1000000):
+                        deadlinemisscounts.value += 1
+                        if (True == DEBUG_PRINT):
+                            print("Deadline missed counts : ", deadlinemisscounts.value)
+    
+                    # Next Execution Window
+                    next_execution_ns += int(DELAY_IN_S * CONVERT_S_TO_NS)
+                    prev = now
 
-                # to send the message with the configured delay, Calculate how long to sleep
-                time_to_sleep_ns = next_execution_ns - time.perf_counter_ns()
-                if time_to_sleep_ns > 0:
-                    if (True == DEBUG_PRINT):
-                        print("Sleep time: " ,  time_to_sleep_ns * CONVERT_NS_TO_MS)
-                    # Provide the calculated sleep time
-                    time.sleep(time_to_sleep_ns * CONVERT_NS_TO_S)
+                    # to send the message with the configured delay, Calculate how long to sleep
+                    time_to_sleep_ns = next_execution_ns - time.perf_counter_ns()
+                    if time_to_sleep_ns > 0:
+                        if (True == DEBUG_PRINT):
+                            print("Sleep time: " ,  time_to_sleep_ns * CONVERT_NS_TO_MS)
+                        # Provide the calculated sleep time
+                        time.sleep(time_to_sleep_ns * CONVERT_NS_TO_S)
             except Exception as e:
                 print("[Error] Transmission error. {e}")
                 import traceback
