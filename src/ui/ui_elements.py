@@ -449,6 +449,10 @@ class CANSimGUI(tb.Window):
 
         # Call to initialize or de-init Encryption Scheme
         self.toggleencschemestate()
+
+        # Tab 4: Replay Attack Simulation
+        replayattacksim_tab = tb.Frame(notebook)
+        notebook.add(replayattacksim_tab, text="Replay Attack Simulation")
         
         #------------------------------------------------------------------------------------------#
 
@@ -768,15 +772,15 @@ class CANSimGUI(tb.Window):
             cpuperarray = decrypt_cpuper
 
         # Reset the mean cpu percentage variable
-        median_cpuper = {}
+        mean_cpuper = {}
         # For cpu percentage samples
         for eachalgo, cpuper in cpuperarray.items():
-            median_cpuper[eachalgo] = 0
+            mean_cpuper[eachalgo] = 0
             #Only if valid samples are available
             if(len(cpuper) > 0):
                 cpuper = np.array(cpuper)
                 # Calculate the median
-                median_cpuper[eachalgo] = np.percentile(cpuper,95)
+                mean_cpuper[eachalgo] = np.mean(cpuper)
 
         # For encryption and decryption times
         for eachalgo, samples in samplearray.items():
@@ -796,7 +800,7 @@ class CANSimGUI(tb.Window):
                     "p99" : '%.3f'%(p99),
                     "jitter_ns" : '%.3f'%(jitter_ns),
                     "cycles/byte" : '%.3f'%(cyclesperbyte),
-                    "cpu_percent" : '%.3f'%(median_cpuper[eachalgo])
+                    "cpu_percent" : '%.3f'%(mean_cpuper[eachalgo])
                 }
         return perfmetrics
 

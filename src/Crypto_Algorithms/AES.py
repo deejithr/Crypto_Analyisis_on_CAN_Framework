@@ -36,8 +36,6 @@ class AES:
         # Generate a strong, random 16-byte key (AES-128)
         # This key is the shared secret.
         self.nonce = os.urandom(AES_KEY_SIZE)
-        self.dummy_data = b'\x00' * AES_KEYSTREAM_SIZE
-        
         
 
     def xor_bytes(self, a: bytes, b: bytes) -> bytes:
@@ -53,6 +51,7 @@ class AES:
             modes.CTR(self.nonce), 
             backend=default_backend()
         )
+        self.dummy_data = b'\x00' * AES_KEYSTREAM_SIZE
         self.sender_encryptor = cipher_send.encryptor()
         ## 2. Generate Keystream (8 bytes)
         # The `update()` method encrypts dummy data (zeros) to generate the keystream.
@@ -71,6 +70,7 @@ class AES:
             modes.CTR(self.nonce), 
             backend=default_backend()
         )
+        self.dummy_data = b'\x00' * AES_KEYSTREAM_SIZE
         self.recv_decryptor = cipher_recv.encryptor()
         ## 2. Generate Keystream (8 bytes)
         # The `update()` method encrypts dummy data (zeros) to generate the keystream.

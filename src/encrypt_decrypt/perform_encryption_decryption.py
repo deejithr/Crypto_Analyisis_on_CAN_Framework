@@ -67,6 +67,9 @@ g_canid = 0
 g_sendercounter = {}
 g_receivercounter = {}
 
+sender_processid = 0
+receiver_processid = 0
+
 ################################################################################
 # Functions
 ################################################################################
@@ -130,11 +133,12 @@ def perform_encryption(data, encrypt_samples, encrypt_cpuper,
                        encscheme_state, canid, isextended
                        ):
     ''' Perfrom encryption using the selected Algorithm'''
+    global sender_processid
     # Start Measurement
     encryptiontime = 0
-    processid = psutil.Process(os.getpid())
+    sender_processid = psutil.Process(os.getpid())
     # For Cpu Percentage Calculation. Initial call of cpu_percent is for setting the baseline
-    cpupercent_b = processid.cpu_percent(interval=None)
+    cpupercent_b = sender_processid.cpu_percent(interval=None)
     encryptionstarttime = time.perf_counter_ns()
     
     #Implementation pending for other algorithms
@@ -150,7 +154,7 @@ def perform_encryption(data, encrypt_samples, encrypt_cpuper,
     # Stop Measurement
     encryptionendtime = time.perf_counter_ns()
     # Get the cpu percentage
-    cpupercent_a = processid.cpu_percent(interval=None)
+    cpupercent_a = sender_processid.cpu_percent(interval=None)
     
     # Storing the encryption cpu percent into the encrypt_cpuper shared variables
     enccpupers = encrypt_cpuper[g_encryptionalgo]
@@ -177,14 +181,16 @@ def perform_decryption(data, decrypt_samples, decrypt_cpuper,
                        encscheme_state, canid, isextended
                        ):
     '''Perform Decryption using the selected Algorithm'''
+    global receiver_processid
     accepted = DECRYPT_NOT_OK
     
     # Start Measurement
     decryptiontime = 0
     # For Cpu Percentage Calculation. Initial call of cpu_percent is for setting the baseline
-    processid = psutil.Process(os.getpid())
-    cpupercent_b =processid.cpu_percent(interval=None)
+    receiver_processid = psutil.Process(os.getpid())
     decryptionstarttime = time.perf_counter_ns()
+    # For Cpu Percentage Calculation. Initial call of cpu_percent is for setting the baseline
+    cpupercent_b = receiver_processid.cpu_percent(interval=None)
 
     #If encryption Mechanism enabled, do decrytpion only if the message is accepted
     if(DECRYPT_OK == isMessageAccepted(data)):
@@ -201,7 +207,7 @@ def perform_decryption(data, decrypt_samples, decrypt_cpuper,
     # End Measurement
     decryptionendtime = time.perf_counter_ns()
     # Get the CPU Percentage
-    cpupercent_a = processid.cpu_percent(interval=None)
+    cpupercent_a = receiver_processid.cpu_percent(interval=None)
 
     # Storing the decryption cpu percent into the decrypt_cpuper shared variables
     decpupers = decrypt_cpuper[g_encryptionalgo]
