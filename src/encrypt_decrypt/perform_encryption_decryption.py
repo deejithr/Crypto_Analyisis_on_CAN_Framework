@@ -43,6 +43,7 @@ CONVERT_NS_TO_MS = 1/ 1_000_000
 
 #Encryption Algorithms
 ENCRYPTION_ALGORITHMS = ["None", "RC4", "SPECK", "xTEA", "PRESENT", "AES128", "ENCRYPTION_SCHEME" ]
+BENCHMARKPERIOD = [100, 50, 20, 10, 5]
 
 ################################################################################
 # Globals
@@ -150,7 +151,6 @@ def perform_encryption(data, encrypt_samples, encrypt_cpuper,
         data = encryption_scheme_encrypt(data)
     else:
         data = encrypt(g_encryptionalgo, g_encryption, data)
-    
     # Stop Measurement
     encryptionendtime = time.perf_counter_ns()
     # Get the cpu percentage

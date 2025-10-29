@@ -27,8 +27,8 @@ import json
 # Macros
 ################################################################################
 #Enum for simulation start/stop
-STARTED = 0
-STOPPED = 1
+STARTED = 1
+STOPPED = 0
 
 # Periodicity to print messages in the console
 CONSOLE_LOGGING_PERIOD = 200
@@ -174,6 +174,10 @@ encrypt_samples = None
 decrypt_samples = None
 encrypt_cpuper = None
 decrypt_cpuper = None
+
+# For benchmarking
+benchmark_deadlinemiss = {}
+benchmarkthread = None
 
 ################################################################################
 # Classes
@@ -623,7 +627,30 @@ class CANSimGUI(tb.Window):
         self.plot_bar()
     
     def do_benchmark(self):
-        pass
+        global sentmessagescount
+        # This is to indicate the results are from benchmarking
+        self.benchmarkresults = True
+
+        for eachalgo in ENCRYPTION_ALGORITHMS:
+            # All algorithms except ENCRYPTION_SCHEME
+            if ("ENCRYPTION_SCHEME" != eachalgo):
+                # Set the encryption algorithm to the selected one
+                setencryptionalgo(eachalgo)
+                self.selected_algo.set(eachalgo)
+                for eachperiod in BENCHMARKPERIOD:
+                    #Set the periodicity
+                    self.canconf_entry3.set(eachperiod)
+                    setmsgperiodicity(eachperiod)
+
+                    # Start the simulation
+                    self.do_start_stop_simulation()
+                    # Run the process for 200 frames
+                    while(200 > sentmessagescount.value):
+                        pass
+                    # Stop the simulation
+                    self.do_start_stop_simulation()
+        # Compare the results
+        self.do_comparison()
 
     def plot_bar(self):
         global en_perfmetrics, de_perfmetrics, deadlinemiss
