@@ -290,8 +290,8 @@ class CANSimGUI(tb.Window):
         perf_tab_subframe2 = tb.Frame(perf_tab_subframe1)
         perf_tab_subframe2.pack(anchor=tk.SE, side="left", expand=True)
 
-        self.perf_benchmarkbtn = tb.Button(perf_tab_subframe2, text="Run Benchmark",
-                                   bootstyle="danger", command=self.do_benchmark)
+        self.perf_benchmarkbtn = tb.Button(perf_tab_subframe2, text="▶ Run Benchmark",
+                                   bootstyle="success", command=self.do_benchmark)
         self.perf_benchmarkbtn.pack(side="left", padx=10, pady=10)
         self.perf_comparebtn = tb.Button(perf_tab_subframe2, text="Compare",
                                    bootstyle="danger", command=self.do_comparison)
@@ -631,6 +631,8 @@ class CANSimGUI(tb.Window):
         # This is to indicate the results are from benchmarking
         self.benchmarkresults = True
 
+        self.perf_benchmarkbtn.config(text="■ Benchmark Running", bootstyle="danger")
+
         for eachalgo in ENCRYPTION_ALGORITHMS:
             # All algorithms except ENCRYPTION_SCHEME
             if ("ENCRYPTION_SCHEME" != eachalgo):
@@ -639,7 +641,7 @@ class CANSimGUI(tb.Window):
                 self.selected_algo.set(eachalgo)
                 for eachperiod in BENCHMARKPERIOD:
                     #Set the periodicity
-                    self.canconf_entry3.set(eachperiod)
+                    self.canconf_entry3.insert(0, str(eachperiod))
                     setmsgperiodicity(eachperiod)
 
                     # Start the simulation
@@ -651,6 +653,7 @@ class CANSimGUI(tb.Window):
                     self.do_start_stop_simulation()
         # Compare the results
         self.do_comparison()
+        self.perf_benchmarkbtn.config(text="▶ Run Benchmark", bootstyle="success")
 
     def plot_bar(self):
         global en_perfmetrics, de_perfmetrics, deadlinemiss
