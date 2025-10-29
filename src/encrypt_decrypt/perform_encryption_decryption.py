@@ -42,14 +42,14 @@ CONVERT_NS_TO_S = 1/ 1_000_000_000
 CONVERT_NS_TO_MS = 1/ 1_000_000
 
 #Encryption Algorithms
-ENCRYPTION_ALGORITHMS = ["None", "RC4", "SPECK", "xTEA", "PRESENT", "AES128", "ENCRYPTION_SCHEME" ]
+ENCRYPTION_ALGORITHMS = ["RC4", "SPECK", "xTEA", "PRESENT", "AES128"]
 BENCHMARKPERIOD = [100, 50, 20, 10, 5]
 
 ################################################################################
 # Globals
 ################################################################################
 # Global Variable to store Encryption Algorithm
-g_encryptionalgo = "None"
+g_encryptionalgo = "RC4"
 
 #Encryption Class Object
 g_encryption = None

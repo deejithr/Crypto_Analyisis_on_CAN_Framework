@@ -18,8 +18,10 @@ import ttkbootstrap as tb
 from CAN_Simulation.simulate import *
 from ttkbootstrap.tableview import Tableview
 from ttkbootstrap.constants import *
+from tkinter import Toplevel, Label, Button
 import matplotlib.pyplot as plt
 import json
+import threading
 
 
 
@@ -30,8 +32,15 @@ import json
 STARTED = 1
 STOPPED = 0
 
+#Enums for Benchmark States
+BENCHMARK_INIT = 0
+BENCHMARK_START_SIM = 1
+BENCHMARK_WAIT_FOR_COMPLETION = 2
+BENCHMARK_STOP_SIM = 3
+BENCHMARK_DEINIT = 4
+
 # Periodicity to print messages in the console
-CONSOLE_LOGGING_PERIOD = 200
+CONSOLE_LOGGING_PERIOD = 500
 
 # Description information for each cipher
 cipherdescription = {
@@ -178,6 +187,8 @@ decrypt_cpuper = None
 # For benchmarking
 benchmark_deadlinemiss = {}
 benchmarkthread = None
+bm_algo = None
+bm_period = None
 
 ################################################################################
 # Classes
@@ -190,6 +201,13 @@ class CANSimGUI(tb.Window):
 
         self.startsimcallback = None
         self.stopsimcallback = None
+
+        # For Benchmark Process
+        self.deadlinemissbenchmark = {}
+        self.benchmarkstate = BENCHMARK_INIT
+        self.benchmarkalgoidx = 0
+        self.benchmarkperiodidx = 0
+
         super().__init__(title="CryptoAnalysis for CAN", themename="simplex")
         self.geometry("1200x768")
 
@@ -259,22 +277,20 @@ class CANSimGUI(tb.Window):
         cryalgo_label.pack(side="top", padx=10, pady=10)
 
         # Radio button for selecting the algorithm
-        self.selected_algo = tk.StringVar(value="None")
+        self.selected_algo = tk.StringVar(value="RC4")
         self.rb_cryalgo_tab = []
         index = 0
         for algo in ENCRYPTION_ALGORITHMS:
-            # Omit radio button for Encryption Scheme
-            if("ENCRYPTION_SCHEME" != algo):
-                self.rb_cryalgo_tab.append(tb.Radiobutton(cryalgo_frame, text=algo, variable=self.selected_algo, 
-                                                value=algo, bootstyle="info"))
-                self.rb_cryalgo_tab[index].pack(side="top", anchor="w", padx=20, pady=5)
-                index = index + 1
+            self.rb_cryalgo_tab.append(tb.Radiobutton(cryalgo_frame, text=algo, variable=self.selected_algo, 
+                                            value=algo, bootstyle="info"))
+            self.rb_cryalgo_tab[index].pack(side="top", anchor="w", padx=20, pady=5)
+            index = index + 1
 
         cryalgo_descp_frame = tb.Frame(cryalgo_mainframe)
         cryalgo_descp_frame.pack(fill="both",padx=10, pady=20)
         self.algodescptext = ScrolledText(cryalgo_descp_frame, height=15, bootstyle="secondary", wrap=tk.WORD)
         self.algodescptext = self.descrpareainit(self.algodescptext)
-        self.insertdescription("None")
+        self.insertdescription("RC4")
         self.algodescptext.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
         # Tab for Performance Measurements
@@ -625,35 +641,101 @@ class CANSimGUI(tb.Window):
         ''' Prepares chart for data comparison '''
         # Plot Encryption Performance Metrics
         self.plot_bar()
+
+    def update_label(self, label):
+        # Update the label's text
+        label.config(text=f"Running benchmark for {ENCRYPTION_ALGORITHMS[self.benchmarkalgoidx]} at {BENCHMARKPERIOD[self.benchmarkperiodidx]}ms periodicity")
     
+        # Schedule this function to be called again after 5000 milliseconds (5 seconds)
+        label.after(5000, self.update_label, label)
+    
+    def display_popup(self):
+        top = Toplevel()
+        top.title("Benchmark Running")
+        top.geometry("400x200") # Set desired size
+
+        label = ttk.Label(top, text=f"Running benchmark for {ENCRYPTION_ALGORITHMS[self.benchmarkalgoidx]} at {BENCHMARKPERIOD[self.benchmarkperiodidx]}ms periodicity", bootstyle="info")
+        label.pack(pady=20)
+
+        close_button = ttk.Button(top, text="Close", command=top.destroy, bootstyle="danger")
+        close_button.pack(pady=10)
+
+        # Start the periodic update function
+        self.update_label(label)
+
     def do_benchmark(self):
-        global sentmessagescount
-        # This is to indicate the results are from benchmarking
-        self.benchmarkresults = True
+        global sentmessagescount, deadlinemiss, bm_algo, bm_period
+        
+        #Run StateMachine
+        if(BENCHMARK_INIT == self.benchmarkstate):
+            #Setup the benchmark variables
+            # This is to indicate the results are from benchmarking
+            self.benchmarkresults = True
+            self.perf_benchmarkbtn.config(text="■ Benchmark Running", bootstyle="danger")
+            # To display the status of benchmark process
+            benchmarkthread = threading.Thread(target = self.display_popup, args = ())
+            benchmarkthread.start()
+            # switch to the next state
+            self.benchmarkstate = BENCHMARK_START_SIM
 
-        self.perf_benchmarkbtn.config(text="■ Benchmark Running", bootstyle="danger")
+        elif (BENCHMARK_START_SIM == self.benchmarkstate):
+            bm_algo = ENCRYPTION_ALGORITHMS[self.benchmarkalgoidx]
+            bm_period =  BENCHMARKPERIOD[self.benchmarkperiodidx]
+            # Set the encryption algorithm and the periodicity
+            setencryptionalgo(bm_algo)
+            self.selected_algo.set(bm_algo)
+            # Create a dictionary only if key not present
+            if(bm_algo not in self.deadlinemissbenchmark):
+                self.deadlinemissbenchmark[bm_algo] = {}
 
-        for eachalgo in ENCRYPTION_ALGORITHMS:
-            # All algorithms except ENCRYPTION_SCHEME
-            if ("ENCRYPTION_SCHEME" != eachalgo):
-                # Set the encryption algorithm to the selected one
-                setencryptionalgo(eachalgo)
-                self.selected_algo.set(eachalgo)
-                for eachperiod in BENCHMARKPERIOD:
-                    #Set the periodicity
-                    self.canconf_entry3.insert(0, str(eachperiod))
-                    setmsgperiodicity(eachperiod)
+            #Set the periodicity, after clearing the current value
+            # self.canconf_entry3.delete("1.0", "end")
+            self.canconf_entry3.insert(0, str(bm_period))
+            setmsgperiodicity(bm_period)
+            # Start the simulation
+            self.do_start_stop_simulation()
+            #Change to next State
+            self.benchmarkstate = BENCHMARK_WAIT_FOR_COMPLETION
+        
+        elif (BENCHMARK_WAIT_FOR_COMPLETION == self.benchmarkstate):
+            if(200 <= sentmessagescount.value):
+                #Change to next State
+                self.benchmarkstate = BENCHMARK_STOP_SIM
 
-                    # Start the simulation
-                    self.do_start_stop_simulation()
-                    # Run the process for 200 frames
-                    while(200 > sentmessagescount.value):
-                        pass
-                    # Stop the simulation
-                    self.do_start_stop_simulation()
-        # Compare the results
-        self.do_comparison()
-        self.perf_benchmarkbtn.config(text="▶ Run Benchmark", bootstyle="success")
+        elif (BENCHMARK_STOP_SIM == self.benchmarkstate):
+            # Stop the simulation
+            self.do_start_stop_simulation()
+            # Store the deadline misscounts for each periodicity
+            ic(deadlinemiss)
+            self.deadlinemissbenchmark[bm_algo][bm_period] = deadlinemiss[bm_algo]
+            #Check if all the periodicity tests have been covered for the current algorithm
+            if(self.benchmarkperiodidx == len(BENCHMARKPERIOD) - 1):
+                self.benchmarkperiodidx = 0
+                #Check if benchmark has been done for all the algorithms
+                if(self.benchmarkalgoidx == len(ENCRYPTION_ALGORITHMS) - 1):
+                    self.benchmarkalgoidx = 0
+                    #Set State to DEINIT
+                    self.benchmarkstate = BENCHMARK_DEINIT
+                else:
+                    self.benchmarkalgoidx +=1
+            else:
+                self.benchmarkperiodidx +=1
+            #Set State to BENCHMARK_START_SIM
+            if(BENCHMARK_DEINIT != self.benchmarkstate):
+                self.benchmarkstate = BENCHMARK_START_SIM
+        
+        elif (BENCHMARK_DEINIT == self.benchmarkstate):
+            # Reset the state to BENCHMARK_INIT
+            self.benchmarkstate = BENCHMARK_INIT
+            
+            # Compare the results
+            self.do_comparison()
+            self.perf_benchmarkbtn.config(text="▶ Run Benchmark", bootstyle="success")
+        
+        # Schedule the task every 1 second, only in states other than INIT
+        if(BENCHMARK_INIT != self.benchmarkstate):
+            self.after(1000, self.do_benchmark) 
+
 
     def plot_bar(self):
         global en_perfmetrics, de_perfmetrics, deadlinemiss
@@ -724,20 +806,38 @@ class CANSimGUI(tb.Window):
         ax3.bar_label(ax3_bars1, rotation=90, padding=5)
         ax3.bar_label(ax3_bars2, rotation=90, padding=5)
         
-        # For Deadline miss counts
-        title4 = f"Deadline Miss counts at {self.canconf_entry3.get()}ms periodicity"
-        deadlinemisses = list(float(deadlinemiss[eachalgo]) for eachalgo in deadlinemiss.keys())
+        if(False == self.benchmarkresults):
+            # For Deadline miss counts
+            title4 = f"Deadline Miss counts at {self.canconf_entry3.get()}ms periodicity"
+            deadlinemisses = list(float(deadlinemiss[eachalgo]) for eachalgo in deadlinemiss.keys())
 
-        ax4_bars1 = ax4.bar(x, deadlinemisses, width, label="Deadline Miss counts")
+            ax4_bars1 = ax4.bar(x, deadlinemisses, width, label="Deadline Miss counts")
 
-        ax4.set_ylabel("counts")
-        ax4.set_title(title4)
-        ax4.set_xticks(x)
-        ax4.set_xticklabels(deadlinemiss.keys())
-        ax4.legend(loc='upper left') 
-        ax4.grid(axis="y", linestyle="--", alpha=0.7)
+            ax4.set_ylabel("counts")
+            ax4.set_title(title4)
+            ax4.set_xticks(x)
+            ax4.set_xticklabels(deadlinemiss.keys())
+            ax4.legend(loc='upper left') 
+            ax4.grid(axis="y", linestyle="--", alpha=0.7)
 
-        ax4.bar_label(ax4_bars1, rotation=90, padding=5)
+            ax4.bar_label(ax4_bars1, rotation=90, padding=5)
+        else: # Benchmark Results
+            # For Deadline miss counts after benchmark results
+            title4 = f"Deadline Miss ratio"
+            ax4.set_title(title4)
+            ax4.set_xlabel('Periodicity')
+            ax4.set_ylabel('Deadline miss ratio')
+
+            #Deadline miss ratio to be plotted
+            x = ENCRYPTION_ALGORITHMS
+            dmr = []
+            index = 0
+            for each in ENCRYPTION_ALGORITHMS:
+                dmr.append(self.deadlinemissbenchmark[each])
+                ax4.plot(x, dmr[index], label=each, linestyle='-')
+            ax4.legend(loc='upper left')
+            # Reset the flag
+            self.benchmarkresults = False
 
         plt.tight_layout()
         plt.show()
