@@ -207,6 +207,7 @@ class CANSimGUI(tb.Window):
         self.benchmarkstate = BENCHMARK_INIT
         self.benchmarkalgoidx = 0
         self.benchmarkperiodidx = 0
+        self.benchmarkinprogress = False
 
         super().__init__(title="CryptoAnalysis for CAN", themename="simplex")
         self.geometry("1200x768")
@@ -533,7 +534,8 @@ class CANSimGUI(tb.Window):
                                   deadlinemisscounts, sentmessagescount,
                                   encrypt_samples, encrypt_cpuper,
                                   decrypt_samples, decrypt_cpuper,
-                                  self.encscheme_state
+                                  self.encscheme_state,
+                                  self.benchmarkinprogress
                                   )
 
     def printtosenderconsole(self):
@@ -647,9 +649,12 @@ class CANSimGUI(tb.Window):
         label.config(text=f"Running benchmark for {ENCRYPTION_ALGORITHMS[self.benchmarkalgoidx]} at {BENCHMARKPERIOD[self.benchmarkperiodidx]}ms periodicity")
     
         # Schedule this function to be called again after 5000 milliseconds (5 seconds)
-        label.after(5000, self.update_label, label)
+        label.after(3000, self.update_label, label)
     
     def display_popup(self):
+        pid = os.getpid()
+        os.sched_setaffinity(pid, {3})
+
         top = Toplevel()
         top.title("Benchmark Running")
         top.geometry("400x200") # Set desired size
@@ -668,6 +673,8 @@ class CANSimGUI(tb.Window):
         
         #Run StateMachine
         if(BENCHMARK_INIT == self.benchmarkstate):
+            pid = os.getpid()
+            os.sched_setaffinity(pid, {3})
             #Setup the benchmark variables
             # This is to indicate the results are from benchmarking
             self.benchmarkresults = True
@@ -675,6 +682,9 @@ class CANSimGUI(tb.Window):
             # To display the status of benchmark process
             benchmarkthread = threading.Thread(target = self.display_popup, args = ())
             benchmarkthread.start()
+
+            # Set benchamrk state to true
+            self.benchmarkinprogress = True
             # switch to the next state
             self.benchmarkstate = BENCHMARK_START_SIM
 
@@ -686,7 +696,7 @@ class CANSimGUI(tb.Window):
             self.selected_algo.set(bm_algo)
             # Create a dictionary only if key not present
             if(bm_algo not in self.deadlinemissbenchmark):
-                self.deadlinemissbenchmark[bm_algo] = {}
+                self.deadlinemissbenchmark[bm_algo] = []
 
             #Set the periodicity, after clearing the current value
             # self.canconf_entry3.delete("1.0", "end")
@@ -707,7 +717,7 @@ class CANSimGUI(tb.Window):
             self.do_start_stop_simulation()
             # Store the deadline misscounts for each periodicity
             ic(deadlinemiss)
-            self.deadlinemissbenchmark[bm_algo][bm_period] = deadlinemiss[bm_algo]
+            self.deadlinemissbenchmark[bm_algo].append(deadlinemiss[bm_algo])
             #Check if all the periodicity tests have been covered for the current algorithm
             if(self.benchmarkperiodidx == len(BENCHMARKPERIOD) - 1):
                 self.benchmarkperiodidx = 0
@@ -727,6 +737,8 @@ class CANSimGUI(tb.Window):
         elif (BENCHMARK_DEINIT == self.benchmarkstate):
             # Reset the state to BENCHMARK_INIT
             self.benchmarkstate = BENCHMARK_INIT
+            # Set benchamrk state to False
+            self.benchmarkinprogress = False
             
             # Compare the results
             self.do_comparison()
@@ -806,6 +818,7 @@ class CANSimGUI(tb.Window):
         ax3.bar_label(ax3_bars1, rotation=90, padding=5)
         ax3.bar_label(ax3_bars2, rotation=90, padding=5)
         
+        # Check if the resutlts are from benchmark results
         if(False == self.benchmarkresults):
             # For Deadline miss counts
             title4 = f"Deadline Miss counts at {self.canconf_entry3.get()}ms periodicity"
@@ -829,12 +842,12 @@ class CANSimGUI(tb.Window):
             ax4.set_ylabel('Deadline miss ratio')
 
             #Deadline miss ratio to be plotted
-            x = ENCRYPTION_ALGORITHMS
-            dmr = []
+            x = BENCHMARKPERIOD
             index = 0
             for each in ENCRYPTION_ALGORITHMS:
-                dmr.append(self.deadlinemissbenchmark[each])
-                ax4.plot(x, dmr[index], label=each, linestyle='-')
+                y_data = self.deadlinemissbenchmark[each]
+                ax4.plot(x, y_data, label=each, linestyle='-')
+                index += 1
             ax4.legend(loc='upper left')
             # Reset the flag
             self.benchmarkresults = False
