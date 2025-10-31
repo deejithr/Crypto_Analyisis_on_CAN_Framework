@@ -29,7 +29,7 @@ NODE_DEINITIALIZED = 0
 NODE_INITIALIZED = 1
 
 # To enable debug prints in the file
-DEBUG_PRINT = True
+DEBUG_PRINT = False
 
 # Delay
 DELAY_IN_S = 20/1000

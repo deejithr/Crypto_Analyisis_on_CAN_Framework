@@ -747,7 +747,6 @@ class CANSimGUI(tb.Window):
             # Stop the simulation
             self.do_start_stop_simulation()
             # Store the deadline misscounts for each periodicity
-            ic(deadlinemiss)
             self.deadlinemissbenchmark[bm_algo].append(deadlinemiss[bm_algo])
             #Check if all the periodicity tests have been covered for the current algorithm
             if(self.benchmarkperiodidx == len(BENCHMARKPERIOD) - 1):
