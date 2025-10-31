@@ -677,7 +677,7 @@ class CANSimGUI(tb.Window):
         p.cpu_affinity([3])
 
         top = Toplevel()
-        top.title("Benchmark Running")
+        top.title("Benchmark Progress")
         top.geometry("500x200") # Set desired size
 
         label = ttk.Label(top, text=f"Running benchmark for {ENCRYPTION_ALGORITHMS[self.benchmarkalgoidx]} at {BENCHMARKPERIOD[self.benchmarkperiodidx]}ms periodicity", bootstyle="info")
