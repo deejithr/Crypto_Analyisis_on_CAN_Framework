@@ -46,7 +46,8 @@ if __name__ == "__main__":
     # Pin the process to Core0, otherwise Scheduler will distribute it to other cores
     # Pin to core 0
     pid_main = os.getpid()
-    os.sched_setaffinity(pid_main, {0})
+    p = psutil.Process(pid_main)
+    p.cpu_affinity([0])
     
     # Start the UI
     app = CANSimGUI()

@@ -123,7 +123,8 @@ class Node:
         # Pin the thread to Core1, otherwise Scheduler will distribute it to other cores
         # Pin to core 1
         pid_sender = os.getpid()
-        os.sched_setaffinity(pid_sender, {1})
+        p = psutil.Process(pid_sender)
+        p.cpu_affinity([1])
 
         # For deadlinemiss counts
         # Reset the deadline miss counts
@@ -135,9 +136,13 @@ class Node:
 
         while True == simulationstate.value:
             try:
-                #if Performing benchmark, stop after 200 messages
-                if((True == benchmarkinprogress) and
-                   (200 >= sentmessagescount.value)):
+                if(
+                   #Continue normally, if no benchmark in progress
+                   (False == benchmarkinprogress) or
+                   #if Performing benchmark, stop after 200 messages
+                   ((True == benchmarkinprogress) and
+                   (200 > sentmessagescount.value))
+                   ):
                     # Perform Encryption
                     encrypteddata, encryptiontime = perform_encryption(can_msg.data, 
                                                                        encrypt_samples, 
@@ -177,7 +182,7 @@ class Node:
                             print("deadline : ", deadline)
 
                         # Consider Deadline missed, only if the value exceeds more 
-                        # than 1ms from the period
+                        # than 2ms from the period
                         if ((now > deadline) and
                             (now - deadline) > 2000000):
                             deadlinemisscounts.value += 1
@@ -214,7 +219,8 @@ class Node:
         # Pin the thread to Core2, otherwise Scheduler will distribute it to other cores
         # Pin to core 2
         pid_receiver = os.getpid()
-        os.sched_setaffinity(pid_receiver, {2})  
+        p = psutil.Process(pid_receiver)
+        p.cpu_affinity([2])  
 
         while True == simulationstate.value:
             try:

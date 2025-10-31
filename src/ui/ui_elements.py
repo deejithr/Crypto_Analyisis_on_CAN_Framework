@@ -13,6 +13,7 @@ import os, sys
 import tkinter as tk
 from tkinter import font
 from tkinter import ttk
+from tkinter import constants
 from ttkbootstrap.scrolled import ScrolledText
 import ttkbootstrap as tb
 from CAN_Simulation.simulate import *
@@ -199,20 +200,27 @@ class CANSimGUI(tb.Window):
         global encrypt_samples, decrypt_samples, encrypt_cpuper , decrypt_cpuper
         global manager 
 
+        #----------------------------------- Callbacks for simulation------------------------------#
         self.startsimcallback = None
         self.stopsimcallback = None
 
-        # For Benchmark Process
+        #--------------------------------------- For Benchmark ------------------------------------#
         self.deadlinemissbenchmark = {}
+        # To hold the state of StateMachine
         self.benchmarkstate = BENCHMARK_INIT
+        # Index for Algorithms and periodicity, during benchmarking process
         self.benchmarkalgoidx = 0
         self.benchmarkperiodidx = 0
+        # Indicates benchmark is in progress
         self.benchmarkinprogress = False
+        self.benchmarkresults = False
+        # For Progressbar increments during benchmark results
+        self.step = 0
 
         super().__init__(title="CryptoAnalysis for CAN", themename="simplex")
         self.geometry("1200x768")
 
-        #----------------------------------- UI Initialization --------------------------------#
+        #------------------------------------- UI Initialization ----------------------------------#
         # Start and Stop simulation
         button_frame = tb.Frame(self)
         button_frame.pack(fill="x", pady=10)
@@ -286,6 +294,8 @@ class CANSimGUI(tb.Window):
                                             value=algo, bootstyle="info"))
             self.rb_cryalgo_tab[index].pack(side="top", anchor="w", padx=20, pady=5)
             index = index + 1
+        # To set the encryption algorithm as RC4, initially
+        setencryptionalgo("RC4")
 
         cryalgo_descp_frame = tb.Frame(cryalgo_mainframe)
         cryalgo_descp_frame.pack(fill="both",padx=10, pady=20)
@@ -644,29 +654,46 @@ class CANSimGUI(tb.Window):
         # Plot Encryption Performance Metrics
         self.plot_bar()
 
-    def update_label(self, label):
+    def update_label(self, label, pbar):
+        # Progres value 
+        progress_value = (self.step / (len(ENCRYPTION_ALGORITHMS) * len(BENCHMARKPERIOD))) * 100
+        pbar.config(value=progress_value)
+
+        #If benchmark completed
+        if(100 == progress_value):
+            labeltext = "BenchMark completed !!"
+        else:
+            labeltext=f"Running benchmark for {ENCRYPTION_ALGORITHMS[self.benchmarkalgoidx]} at {BENCHMARKPERIOD[self.benchmarkperiodidx]}ms periodicity"
+
         # Update the label's text
-        label.config(text=f"Running benchmark for {ENCRYPTION_ALGORITHMS[self.benchmarkalgoidx]} at {BENCHMARKPERIOD[self.benchmarkperiodidx]}ms periodicity")
+        label.config(text=labeltext)
     
-        # Schedule this function to be called again after 5000 milliseconds (5 seconds)
-        label.after(3000, self.update_label, label)
+        # Schedule this function to be called again after 3000 milliseconds (3 seconds)
+        label.after(3000, self.update_label, label, pbar)
     
     def display_popup(self):
         pid = os.getpid()
-        os.sched_setaffinity(pid, {3})
+        p = psutil.Process(pid)
+        p.cpu_affinity([3])
 
         top = Toplevel()
         top.title("Benchmark Running")
-        top.geometry("400x200") # Set desired size
+        top.geometry("500x200") # Set desired size
 
         label = ttk.Label(top, text=f"Running benchmark for {ENCRYPTION_ALGORITHMS[self.benchmarkalgoidx]} at {BENCHMARKPERIOD[self.benchmarkperiodidx]}ms periodicity", bootstyle="info")
         label.pack(pady=20)
 
-        close_button = ttk.Button(top, text="Close", command=top.destroy, bootstyle="danger")
-        close_button.pack(pady=10)
+        pbar = ttk.Progressbar(
+            top,
+            bootstyle="info",
+            maximum=100,
+            value=0,
+            length=300
+        )
+        pbar.pack(padx=10, pady=10)
 
         # Start the periodic update function
-        self.update_label(label)
+        self.update_label(label, pbar)
 
     def do_benchmark(self):
         global sentmessagescount, deadlinemiss, bm_algo, bm_period
@@ -674,10 +701,12 @@ class CANSimGUI(tb.Window):
         #Run StateMachine
         if(BENCHMARK_INIT == self.benchmarkstate):
             pid = os.getpid()
-            os.sched_setaffinity(pid, {3})
+            p = psutil.Process(pid)
+            p.cpu_affinity([3])
             #Setup the benchmark variables
             # This is to indicate the results are from benchmarking
             self.benchmarkresults = True
+            self.step = 0
             self.perf_benchmarkbtn.config(text="■ Benchmark Running", bootstyle="danger")
             # To display the status of benchmark process
             benchmarkthread = threading.Thread(target = self.display_popup, args = ())
@@ -704,6 +733,8 @@ class CANSimGUI(tb.Window):
             setmsgperiodicity(bm_period)
             # Start the simulation
             self.do_start_stop_simulation()
+            # Increment the step 
+            self.step += 1
             #Change to next State
             self.benchmarkstate = BENCHMARK_WAIT_FOR_COMPLETION
         
@@ -845,8 +876,8 @@ class CANSimGUI(tb.Window):
             x = BENCHMARKPERIOD
             index = 0
             for each in ENCRYPTION_ALGORITHMS:
-                y_data = self.deadlinemissbenchmark[each]
-                ax4.plot(x, y_data, label=each, linestyle='-')
+                y_data = list(float(x) for x in self.deadlinemissbenchmark[each])
+                ax4.plot(x, y_data, label=each, linestyle='-', marker='o', markersize=8)
                 index += 1
             ax4.legend(loc='upper left')
             # Reset the flag
