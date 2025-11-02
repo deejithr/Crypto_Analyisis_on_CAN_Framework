@@ -871,13 +871,61 @@ class CANSimGUI(tb.Window):
             ax4.set_xlabel('Periodicity')
             ax4.set_ylabel('Deadline miss ratio')
 
-            #Deadline miss ratio to be plotted
-            x = BENCHMARKPERIOD
+            # Deadline miss ratio to be plotted
+            x_unsorted = BENCHMARKPERIOD
+            base_offset_y = 12  # Base vertical offset in points for annotations
+
             index = 0
             for each in ENCRYPTION_ALGORITHMS:
-                y_data = list(float(x) for x in self.deadlinemissbenchmark[each])
-                ax4.plot(x, y_data, label=each, linestyle='-', marker='o', markersize=8)
+                #Convert y data to float list
+                y_data_unsorted = list(float(val) for val in self.deadlinemissbenchmark[each])
+
+                # Sort x and y data together
+                # Sorts the data based on the periodicity
+                data_points = sorted(list(zip(x_unsorted, y_data_unsorted)), key=lambda p: p[0])
+
+                # Unpack the sorted data
+                x_sorted, y_sorted = zip(*data_points)
+                x_sorted = list(x_sorted)
+                y_sorted = list(y_sorted)
+
+                #Plot the data
+                ax4.plot(
+                    x_sorted, 
+                    y_sorted, 
+                    label=each, 
+                    linestyle='-', 
+                    marker='o', 
+                    markersize=8
+                )
+
+                # Add Annotations with Overlap Prevention, depending on the offset direction and magnitude.
+                # This prevents labels from different lines from overlapping.
+
+                # Alternating vertical direction (1 or -1)
+                stagger_direction = 1 if index % 2 == 0 else -1 
+
+                # Calculate a slight horizontal offset proportional to the index
+                final_offset_x = (index - (len(ENCRYPTION_ALGORITHMS) - 1) / 2) * 4
+
+                # Final Vertical Offset: base_offset_y (e.g., 12 points) multiplied by direction
+                final_offset_y = base_offset_y * stagger_direction
+
+                for xi, yi in zip(x_sorted, y_sorted):
+                    # Format the text to 3 decimal places
+                    value_text = f'{yi:.3f}' 
+
+                    ax4.annotate(
+                        value_text,
+                        (xi, yi),
+                        textcoords="offset points",
+                        xytext=(final_offset_x, final_offset_y), # Apply the staggered offset
+                        ha='center', # Horizontal alignment: centered on the point
+                        fontsize=8,
+                        color=ax4.lines[-1].get_color() # Use the color of the current line
+                    )
                 index += 1
+
             ax4.legend(loc='upper left')
             # Reset the flag
             self.benchmarkresults = False
