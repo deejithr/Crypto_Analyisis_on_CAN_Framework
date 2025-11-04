@@ -184,6 +184,7 @@ encrypt_samples = None
 decrypt_samples = None
 encrypt_cpuper = None
 decrypt_cpuper = None
+ready_event = None
 
 # For benchmarking
 benchmark_deadlinemiss = {}
@@ -197,7 +198,7 @@ bm_period = None
 class CANSimGUI(tb.Window):
     '''Represents the UI'''
     def __init__(self):
-        global encrypt_samples, decrypt_samples, encrypt_cpuper , decrypt_cpuper
+        global encrypt_samples, decrypt_samples, encrypt_cpuper , decrypt_cpuper, ready_event
         global manager 
 
         #----------------------------------- Callbacks for simulation------------------------------#
@@ -496,9 +497,10 @@ class CANSimGUI(tb.Window):
         decrypt_samples = manager.dict()
         encrypt_cpuper = manager.dict()
         decrypt_cpuper = manager.dict()
+        ready_event = multiprocessing.Event()
         
         #Initialize the samples array in the performance Metrics array for each algorithm
-        for algo in ENCRYPTION_ALGORITHMS:
+        for algo in (ENCRYPTION_ALGORITHMS + ["ENCRYPTION_SCHEME"]):
             encrypt_samples[algo] = []
             decrypt_samples[algo] = []
             encrypt_cpuper[algo] = []
@@ -545,7 +547,8 @@ class CANSimGUI(tb.Window):
                                   encrypt_samples, encrypt_cpuper,
                                   decrypt_samples, decrypt_cpuper,
                                   self.encscheme_state,
-                                  self.benchmarkinprogress
+                                  self.benchmarkinprogress,
+                                  ready_event
                                   )
 
     def printtosenderconsole(self):
@@ -952,6 +955,7 @@ class CANSimGUI(tb.Window):
                                    self.keystream_gen_option.get(),
                                    self.mac_gen_option.get(),
                                    int(self.canconf_entry1.get(),16))
+        setencryptionalgo("ENCRYPTION_SCHEME")
         
     def toggleencschemestate(self):
         '''Callback triggered on changing encryption scheme state'''

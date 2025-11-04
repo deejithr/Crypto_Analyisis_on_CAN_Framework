@@ -12,6 +12,9 @@ import struct
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 import os
+from Crypto.Cipher import AES
+from Crypto.Hash import CMAC
+from icecream import ic
 
 ################################################################################
 # Macros
@@ -29,7 +32,7 @@ AES_KEYSTREAM_SIZE = 8
 ################################################################################
 # Classes
 ################################################################################
-class AES:
+class AES_Cipher:
     '''Represents the AES Algorithm class'''
     def __init__(self, key):
         self.key = key
@@ -79,4 +82,16 @@ class AES:
         plaintext_payload = self.xor_bytes(data, self.keystream_recv)
 
         return plaintext_payload
+    
+    def generate_cmac_aes128(self, message: bytes, tag_len: int = 4) -> bytes:
+        '''Generate AES-128 CMAC tag for the given message.'''
+        cmac = CMAC.new(self.key, ciphermod=AES)
+        cmac.update(message)
+        full_tag = cmac.digest()
+        return full_tag[:tag_len]  # Truncate to fit 8B CAN frame
+    
+    def verify_cmac_aes128(self, message: bytes, taglen: bytes, mac) -> bool:
+        '''Verify CMAC tag on receiver side.'''
+        expected = self.generate_cmac_aes128(message, taglen)
+        return expected == mac
         

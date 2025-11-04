@@ -72,7 +72,8 @@ class Node:
                       crypt_samples, 
                       crypt_cpuper,
                       encscheme_state,
-                      benchmarkinprogress
+                      benchmarkinprogress,
+                      ready_event
                       ):
         '''Function to create process for the Node'''
         # Create process based on node type
@@ -85,7 +86,8 @@ class Node:
                                                                                         crypt_samples, 
                                                                                         crypt_cpuper,
                                                                                         encscheme_state,
-                                                                                        benchmarkinprogress
+                                                                                        benchmarkinprogress,
+                                                                                        ready_event
                                                                                         ))
             elif self.nodetype == NODE_RECEIVER:
                 self.process =  multiprocessing.Process(target=self.action_receiver, args=(console_queue,
@@ -93,7 +95,8 @@ class Node:
                                                                                            crypt_samples, 
                                                                                            crypt_cpuper,
                                                                                            encscheme_state,
-                                                                                           benchmarkinprogress
+                                                                                           benchmarkinprogress,
+                                                                                           ready_event
                                                                                         ))
         except Exception as e:
             print("[Error] Unable to create process {e}")
@@ -111,7 +114,8 @@ class Node:
                       sentmessagescount,
                       encrypt_samples, encrypt_cpuper,
                       encscheme_state,
-                      benchmarkinprogress
+                      benchmarkinprogress, 
+                      ready_event
                       ):
         '''Function for actions to be performed by the sender'''
         global can_msg, DELAY_IN_S
@@ -149,7 +153,8 @@ class Node:
                                                                        encrypt_cpuper,
                                                                        encscheme_state,
                                                                        can_msg.arbritration_id,
-                                                                       can_msg.isextended
+                                                                       can_msg.isextended,
+                                                                       ready_event
                                                                        )
                     print("Sender: Data before Encryption:  " + str(can_msg.data))
 
@@ -209,25 +214,29 @@ class Node:
         self.nodestatus = NODE_DEINITIALIZED
         
     def action_receiver(self, console_queue, simulationstate, decrypt_samples, decrypt_cpuper,
-                        encscheme_state, benchmarkinprogress
+                        encscheme_state, benchmarkinprogress, ready_event
                         ):
         '''Function for actions to be performed by the Receiver'''
         global pid_receiver
         print("Receiver Node: " + self.nodename +  " Initiated")
         self.nodestatus = NODE_INITIALIZED
 
+        # Flag to indicate that the receiver is ready or not
+        receiver_ready = False
+
         # Pin the thread to Core2, otherwise Scheduler will distribute it to other cores
         # Pin to core 2
         pid_receiver = os.getpid()
         p = psutil.Process(pid_receiver)
-        p.cpu_affinity([2])  
+        p.cpu_affinity([3])  
 
         while True == simulationstate.value:
             try:
-                # received = self.nodebus.recv()
-                for received in self.nodebus:
+                received = None
+                received = self.nodebus.recv(timeout=0.005)
+                if received is not None:
                     # Setting the received flag to True
-                    received.is_rx = True
+                    # received.is_rx = True
                     # Perform Decrytpion and acceptance
                     decrypteddata, decryptiontime, accepted = perform_decryption(received.data,
                                                                                  decrypt_samples, 
@@ -239,6 +248,11 @@ class Node:
                     acceptancestate = "  ✅" if DECRYPT_OK == accepted else "  ❌"
                     print("Receiver: Data after Decryption:   " + str(list(decrypteddata)))
                     console_queue.put(f"Received: {received}    t_decrypt: {decryptiontime:.3f} us {acceptancestate}")
+                    if(False == receiver_ready):
+                        #Indicate the reciever is ready
+                        ready_event.set()
+                        receiver_ready = True
+                        print("Receiver Node: " + self.nodename +  " Ready")
             except Exception as e:
                 print("[Error] Reception error {e}")
                 import traceback
@@ -280,7 +294,8 @@ class CanSim:
                          encrypt_samples, encrypt_cpuper,
                          decrypt_samples, decrypt_cpuper,
                          encscheme_state,
-                         benchmarkinprogress):
+                         benchmarkinprogress,
+                         ready_event):
         '''This function starts the simulation'''
 
         # Set the simulation State to TRUE
@@ -293,7 +308,8 @@ class CanSim:
                              encrypt_samples, encrypt_cpuper,
                              decrypt_samples, decrypt_cpuper,
                              encscheme_state,
-                             benchmarkinprogress)
+                             benchmarkinprogress,
+                             ready_event)
 
     
     def stop_simulation(self, simulationstate):
@@ -327,16 +343,16 @@ class CanSim:
 def instantiatenodes(objbus, squeue, rqueue, simstate, deadlinemc, 
                      sentmsgc, encrypt_samples, encrypt_cpuper, 
                      decrypt_samples, decrypt_cpuper,
-                     encscheme_state, benchmarkinprogress):
+                     encscheme_state, benchmarkinprogress, ready_event):
     '''Function to start threads for each Node in the Can bus'''
     for eachNode in objbus.nodes:
         #Check the Node type
         if(NODE_SENDER == eachNode.nodetype):
             eachNode.createprocess(squeue, simstate, deadlinemc, sentmsgc, encrypt_samples, encrypt_cpuper,
-                                   encscheme_state, benchmarkinprogress)
+                                   encscheme_state, benchmarkinprogress, ready_event)
         else:
             eachNode.createprocess(rqueue, simstate, None, None, decrypt_samples, decrypt_cpuper,
-                                   encscheme_state, None)
+                                   encscheme_state, None, ready_event)
 
 def setcanmessage(canid, data, isExtended):
     '''Function sets the parameters for CAN Message'''

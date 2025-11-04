@@ -15,7 +15,8 @@ from Crypto_Algorithms.RC4 import *
 from Crypto_Algorithms.SPECK import *
 from Crypto_Algorithms.PRESENT import *
 from Crypto_Algorithms.xTEA import *
-from Crypto_Algorithms.AES import *
+from Crypto_Algorithms.AES_Cipher import *
+from Crypto_Algorithms.SHA_Cipher import *
 import numpy as np
 import psutil, os
 import multiprocessing
@@ -33,8 +34,8 @@ from icecream import ic
 CPU_FREQ_MHZ = 2592.008
 
 # Enums for Can message accepted or not
-DECRYPT_OK = 0
-DECRYPT_NOT_OK = 1
+DECRYPT_OK = 1
+DECRYPT_NOT_OK = 0
 
 # Conversion Macros
 CONVERT_S_TO_NS = 1_000_000_000
@@ -44,6 +45,9 @@ CONVERT_NS_TO_MS = 1/ 1_000_000
 #Encryption Algorithms
 ENCRYPTION_ALGORITHMS = ["RC4", "SPECK", "xTEA", "PRESENT", "AES128"]
 BENCHMARKPERIOD = [100, 50, 20, 10, 5]
+
+# For Encryption State
+DECRYTPION_WINDOW = 2
 
 ################################################################################
 # Globals
@@ -106,32 +110,71 @@ def decrypt(algo, encobj, data):
         pass
     return data
 
-def encryption_scheme_encrypt(data):
+def generatemac(algo, encobj, data):
+    if("AES128" == algo):
+        mac = encobj.generate_cmac_aes128(data, 2)
+    elif("SHA256" == algo):
+        mac = encobj.generate_hmac_sha256(data, 2)
+    return mac
+
+def verifymac(algo, encobj, data, mac):
+    if("AES128" == algo):
+        result = encobj.verify_cmac_aes128(data, 2, mac)
+    elif("SHA256" == algo):
+        result = encobj.verify_hmac_sha256(data, 2, mac)
+    return result
+
+def encryption_scheme_encrypt(data, ready_event):
     global g_canid, g_keystreamgen, g_noncecreation, g_macgeneration
-    global g_noncealgo, g_keystreamalgo, g_macgenalgo
+    global g_noncealgo, g_keystreamalgo, g_macgenalgo, g_sendercounter
     
     #Get the counter 
     if(g_canid not in g_sendercounter.keys()):
-        g_sendercounter[g_canid] = 0
+        g_sendercounter[g_canid] = 1
     
     #Append the counter and CANID to create input for Nonce creation
-    nonceinput = g_canid.to_bytes(4,'big') + g_sendercounter[g_canid].to_bytes(4,'big')
+    sender_nonceinput = g_canid.to_bytes(4,'big') + g_sendercounter[g_canid].to_bytes(4,'big')
+    #Encrypt this Nonce using Nonce-encrytpion Algorithm
+    sender_Nonce = encrypt(g_noncealgo, g_noncecreation, sender_nonceinput)
+    # Generate Keystream with this Nonce
+    sender_S = encrypt(g_keystreamalgo, g_keystreamgen, sender_Nonce)
+    #Encrypted Payload
+    C = []
+    for byte_a, byte_b in zip(data[0:6], sender_S):
+        C.append(byte_a ^ byte_b)
+    #Convert C to bytearray
+    C = bytes(C)
+
+    #Perform MAC generation
+    sender_macinput = g_canid.to_bytes(4,'big') + g_sendercounter[g_canid].to_bytes(4,'big') + C
+    sender_mac = generatemac(g_macgenalgo, g_macgeneration, sender_macinput)
+
+    can_payload = sender_mac + C
+
+    #Increment the counter, only if the Receiver event is set, to sync between sender and receiver
+    if(True == ready_event.is_set()): 
+        g_sendercounter[g_canid] += 1
+    return can_payload
+
+def encryption_scheme_decrypt(data, canid):
+    global g_receivercounter
+
+    #Append the counter and CANID to create input for Nonce creation
+    nonceinput = canid.to_bytes(4,'big') + g_receivercounter[canid].to_bytes(4,'big')
     #Encrypt this Nonce using Nonce-encrytpion Algorithm
     Nonce = encrypt(g_noncealgo, g_noncecreation, nonceinput)
     # Generate Keystream with this Nonce
     S = encrypt(g_keystreamalgo, g_keystreamgen, Nonce)
     #Encrypted Payload
-    for byte_a, byte_b in zip(data, S):
-        C = byte_a ^ byte_b
-
-    #Increment the counter 
-    g_sendercounter[g_canid] += 1
-
-    #Perform MAC generation
-    return C
+    P = []
+    for byte_a, byte_b in zip(data[0:6], S):
+        P.append(byte_a ^ byte_b)
+    #Convert P to bytearray
+    P = bytes(P)
+    return P
 
 def perform_encryption(data, encrypt_samples, encrypt_cpuper,
-                       encscheme_state, canid, isextended
+                       encscheme_state, canid, isextended, ready_event
                        ):
     ''' Perfrom encryption using the selected Algorithm'''
     global sender_processid
@@ -148,7 +191,7 @@ def perform_encryption(data, encrypt_samples, encrypt_cpuper,
     
     # if Encryption Scheme enabled
     if(True == encscheme_state.get()):
-        data = encryption_scheme_encrypt(data)
+        data = encryption_scheme_encrypt(data, ready_event)
     else:
         data = encrypt(g_encryptionalgo, g_encryption, data)
     # Stop Measurement
@@ -172,9 +215,28 @@ def perform_encryption(data, encrypt_samples, encrypt_cpuper,
     
     return data, encryptiontime
 
-def isMessageAccepted(data):
-    # Implmentation Pending
-    return DECRYPT_OK
+def isMessageAccepted(encstate, data, canid):
+    global g_macgeneration, g_macgenalgo, g_receivercounter
+
+    #Get the counter 
+    if(canid not in g_receivercounter.keys()):
+        g_receivercounter[canid] = 0
+
+    verificationstatus = DECRYPT_NOT_OK
+    if(True == encstate):
+        countercandidate = g_receivercounter[g_canid] + 1
+        while (countercandidate <= g_receivercounter[g_canid] + DECRYTPION_WINDOW):
+            #Perform MAC verification
+            receiver_macinput = canid.to_bytes(4,'big') + countercandidate.to_bytes(4,'big') + data[2:]
+            verificationstatus = verifymac(g_macgenalgo, g_macgeneration, receiver_macinput, data[0:2])
+            if(DECRYPT_OK == verificationstatus):
+                g_receivercounter[g_canid] = countercandidate
+                break
+            countercandidate += 1
+    else:
+        verificationstatus = DECRYPT_OK
+
+    return verificationstatus
 
 
 def perform_decryption(data, decrypt_samples, decrypt_cpuper,
@@ -193,14 +255,14 @@ def perform_decryption(data, decrypt_samples, decrypt_cpuper,
     cpupercent_b = receiver_processid.cpu_percent(interval=None)
 
     #If encryption Mechanism enabled, do decrytpion only if the message is accepted
-    if(DECRYPT_OK == isMessageAccepted(data)):
+    if(DECRYPT_OK == isMessageAccepted(encscheme_state.get(), data, canid)):
         accepted = DECRYPT_OK
         #Implementation pending for other algorithms
         # Call decrytion function depending on the algorithm
         # to decrypt the data
         # Check if Encryption Scheme enabled
         if(True == encscheme_state.get()):
-            data = encryption_scheme_decrypt(data)
+            data = encryption_scheme_decrypt(data, canid)
         else:
             data = decrypt(g_encryptionalgo, g_encryption, data)
     
@@ -236,7 +298,9 @@ def initencryptionobject(algo):
     elif ("xTEA" == algo):
         encobj = xTEA(XTEA_KEY)
     elif ("AES128" == algo):
-        encobj = AES(AES_KEY)
+        encobj = AES_Cipher(AES_KEY)
+    elif ("SHA256" == algo):
+        encobj = SHA_Cipher(AES_KEY)
     else:
         pass
     return encobj
