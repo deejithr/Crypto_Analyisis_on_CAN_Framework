@@ -111,16 +111,16 @@ def decrypt(algo, encobj, data):
     return data
 
 def generatemac(algo, encobj, data):
-    if("AES128" == algo):
+    if("AES128-CMAC" == algo):
         mac = encobj.generate_cmac_aes128(data, 2)
-    elif("SHA256" == algo):
+    elif("SHA256-HMAC" == algo):
         mac = encobj.generate_hmac_sha256(data, 2)
     return mac
 
 def verifymac(algo, encobj, data, mac):
-    if("AES128" == algo):
+    if("AES128-CMAC" == algo):
         result = encobj.verify_cmac_aes128(data, 2, mac)
-    elif("SHA256" == algo):
+    elif("SHA256-HMAC" == algo):
         result = encobj.verify_hmac_sha256(data, 2, mac)
     return result
 
@@ -297,9 +297,12 @@ def initencryptionobject(algo):
         encobj = PRESENT()
     elif ("xTEA" == algo):
         encobj = xTEA(XTEA_KEY)
-    elif ("AES128" == algo):
+    elif (
+          ("AES128" == algo) or
+          ("AES128-CMAC" == algo)
+    ):
         encobj = AES_Cipher(AES_KEY)
-    elif ("SHA256" == algo):
+    elif ("SHA256-HMAC" == algo):
         encobj = SHA_Cipher(AES_KEY)
     else:
         pass
@@ -349,4 +352,11 @@ def setencryptionalgo(algorithm):
     #Initialize g_encryption object, based on the algorithm selected
     g_encryption = initencryptionobject(g_encryptionalgo)
 
+def getsendercounter():
+    global g_sendercounter, g_canid
+    return g_sendercounter
+
+def getreceivercounter():
+    global g_receivercounter, g_canid
+    return g_receivercounter
     

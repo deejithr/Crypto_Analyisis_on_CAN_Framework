@@ -37,7 +37,7 @@ class SHA_Cipher:
         mac = hmac.new(self.key, message, hashlib.sha256).digest()
         return mac[:tag_len]
 
-    def verify_hmac_sha256(self, message: bytes, tag: bytes) -> bool:
+    def verify_hmac_sha256(self, message: bytes, taglen: bytes, mac) -> bool:
         ''' Verify HMAC tag.'''
-        expected = self.generate_hmac_sha256(message, len(tag))
-        return hmac.compare_digest(expected, tag)
+        expected = self.generate_hmac_sha256(message, taglen)
+        return hmac.compare_digest(expected, mac)

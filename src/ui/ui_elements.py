@@ -138,25 +138,19 @@ encryptionschemedescription = {
 # Algorithms that can be selected for Nonce Creation
 nonce_creation_gen_algo =[
     "SPECK",
-    "PRESENT",
-    "RC4",
     "xTEA",
-    "AES",
 ]
 
 # Algorithms that can be selected for KeyStream Gen
 keystream_gen_algo =[
-    "PRESENT",
-    "SPECK",
     "xTEA",
-    "RC4",
-    "AES",
+    "SPECK",
 ]
 
 # Algorithms that can be selected for MAC Creation
 mac_gen_algo =[
-    "AES128",
-    "HMAC"
+    "AES128-CMAC",
+    "SHA256-HMAC"
 ]
 
 
@@ -191,6 +185,9 @@ benchmark_deadlinemiss = {}
 benchmarkthread = None
 bm_algo = None
 bm_period = None
+
+# For encrytpion scheme counter display
+counterthread = None
 
 ################################################################################
 # Classes
@@ -513,6 +510,7 @@ class CANSimGUI(tb.Window):
         global simulationstate
         global encrypt_samples, encrypt_cpuper
         global decrypt_samples, decrypt_cpuper
+        global counterthread
 
         #If simulation is already started
         if (self.simulation == STARTED):
@@ -541,6 +539,12 @@ class CANSimGUI(tb.Window):
             self.simulation = STARTED
             self.start_stop_btn.config(text="■ Stop Simulation", bootstyle="danger")
             self.inserttotableview("Simulation in Progress")
+            
+            # Only if the encrypton scheme is enabled, start tasks for counter update
+            if(True == self.encscheme_state.get()):
+                # To display the status of benchmark process
+                counterthread = threading.Thread(target = self.update_counters, args = ())
+                counterthread.start()
             #Call the start simulation callback
             self.startsimcallback(ui_senderqueue, ui_receiverqueue, simulationstate, 
                                   deadlinemisscounts, sentmessagescount,
@@ -673,6 +677,22 @@ class CANSimGUI(tb.Window):
     
         # Schedule this function to be called again after 3000 milliseconds (3 seconds)
         label.after(3000, self.update_label, label, pbar)
+
+    def update_counters(self):
+        global simulationstate
+
+        # Clear the counter entries first
+        self.sendercounter_entry.delete(0, END)
+        self.receivercounter_entry.delete(0, END)
+        #Update with the current values of sender and receiver counters
+        scounter = getsendercounter()
+        rcounter = getreceivercounter()
+        self.sendercounter_entry.insert(0, str(scounter))
+        self.receivercounter_entry.insert(0, str(rcounter))
+        
+        if(True == simulationstate.value):
+            # Schedule this function to be called again after 3000 milliseconds (3 seconds)
+            self.after(3000, self.update_counters)
     
     def display_popup(self):
         pid = os.getpid()
