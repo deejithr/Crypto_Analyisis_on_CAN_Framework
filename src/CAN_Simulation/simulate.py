@@ -147,6 +147,12 @@ class Node:
                    ((True == benchmarkinprogress) and
                    (200 > sentmessagescount.value))
                    ):
+                    # Get the current timestamp
+                    now = time.perf_counter_ns()
+                    if(True == firstCall):
+                        next_execution_ns = prev = time.perf_counter_ns()
+                    deadline = next_execution_ns + int(DELAY_IN_S * CONVERT_S_TO_NS)
+                    
                     # Perform Encryption
                     encrypteddata, encryptiontime = perform_encryption(can_msg.data, 
                                                                        encrypt_samples, 
@@ -171,11 +177,6 @@ class Node:
                     console_queue.put(f"Sent: {msg}    t_encrypt: {encryptiontime:.3f} us")
                     print("action_sender: sentmessagescount = ", sentmessagescount.value)
 
-                    # Get the current timestamp
-                    now = time.perf_counter_ns()
-                    if(True == firstCall):
-                        next_execution_ns = prev = time.perf_counter_ns()
-                    deadline = next_execution_ns + int(DELAY_IN_S * CONVERT_S_TO_NS)
 
                     if(True == firstCall):
                         time.sleep(DELAY_IN_S)
