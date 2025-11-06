@@ -135,6 +135,10 @@ encryptionschemedescription = [
 ["Encryption Scheme\n", "heading"],
 ["\nThe Encryption Scheme aims at authentication and replay protection for CAN communication.Along with the encrypted payload, a truncated MAC shall be sent to ensure authenticity of the sender. An incrementing counter shall be maintained at both sender and receiver side for each individual CAN ID. The counter shall be a 16-bit or 24-bit counter and is not transmitted in payload and is used as an input for data encryption and MAC generation. \n", "default"],
 ["\nThe sender increments this counter on successful transmission of CAN frame and the receiver increments the counter on successful reception. On reception of a CAN frame, the receiver increments its counter and then performs decryption and MAC verification using that value. An attempt at decryption and MAC verification with an increment of 2 to the counter shall be performed if the counter increment of 1 doesn’t satisfy verification. If verification still fails, then the frame will be dropped. On successful verification, the counter shall be made as the value for which the verification passed. \n", "default"],
+["\n\nNonce Creation: N = encrypt (K1, (CAN_ID || counter))", "default"],
+["\n\nKeystream: S = encrypt (K2, N)", "default"],
+["\n\nPayload Data encryption: C = P xor S", "default"],
+["\n\nMAC generation: MAC[0:2] = CMAC(K3, (CAN_ID || counter || C))", "default"]
 ]
 
 
