@@ -69,8 +69,8 @@ g_macgenalgo = None
 
 g_canid = 0
 
-g_sendercounter = {}
-g_receivercounter = {}
+g_sendercounter = 0
+g_receivercounter = 0
 
 sender_processid = 0
 receiver_processid = 0
@@ -128,12 +128,8 @@ def encryption_scheme_encrypt(data, ready_event):
     global g_canid, g_keystreamgen, g_noncecreation, g_macgeneration
     global g_noncealgo, g_keystreamalgo, g_macgenalgo, g_sendercounter
     
-    #Get the counter 
-    if(g_canid not in g_sendercounter.keys()):
-        g_sendercounter[g_canid] = 1
-    
     #Append the counter and CANID to create input for Nonce creation
-    sender_nonceinput = g_canid.to_bytes(4,'big') + g_sendercounter[g_canid].to_bytes(4,'big')
+    sender_nonceinput = g_canid.to_bytes(4,'big') + g_sendercounter.value.to_bytes(4,'big')
     #Encrypt this Nonce using Nonce-encrytpion Algorithm
     sender_Nonce = encrypt(g_noncealgo, g_noncecreation, sender_nonceinput)
     # Generate Keystream with this Nonce
@@ -146,21 +142,21 @@ def encryption_scheme_encrypt(data, ready_event):
     C = bytes(C)
 
     #Perform MAC generation
-    sender_macinput = g_canid.to_bytes(4,'big') + g_sendercounter[g_canid].to_bytes(4,'big') + C
+    sender_macinput = g_canid.to_bytes(4,'big') + g_sendercounter.value.to_bytes(4,'big') + C
     sender_mac = generatemac(g_macgenalgo, g_macgeneration, sender_macinput)
 
     can_payload = sender_mac + C
 
     #Increment the counter, only if the Receiver event is set, to sync between sender and receiver
     if(True == ready_event.is_set()): 
-        g_sendercounter[g_canid] += 1
+        g_sendercounter.value += 1
     return can_payload
 
 def encryption_scheme_decrypt(data, canid):
     global g_receivercounter
 
     #Append the counter and CANID to create input for Nonce creation
-    nonceinput = canid.to_bytes(4,'big') + g_receivercounter[canid].to_bytes(4,'big')
+    nonceinput = canid.to_bytes(4,'big') + g_receivercounter.value.to_bytes(4,'big')
     #Encrypt this Nonce using Nonce-encrytpion Algorithm
     Nonce = encrypt(g_noncealgo, g_noncecreation, nonceinput)
     # Generate Keystream with this Nonce
@@ -218,19 +214,15 @@ def perform_encryption(data, encrypt_samples, encrypt_cpuper,
 def isMessageAccepted(encstate, data, canid):
     global g_macgeneration, g_macgenalgo, g_receivercounter
 
-    #Get the counter 
-    if(canid not in g_receivercounter.keys()):
-        g_receivercounter[canid] = 0
-
     verificationstatus = DECRYPT_NOT_OK
     if(True == encstate):
-        countercandidate = g_receivercounter[g_canid] + 1
-        while (countercandidate <= g_receivercounter[g_canid] + DECRYTPION_WINDOW):
+        countercandidate = g_receivercounter.value + 1
+        while (countercandidate <= g_receivercounter.value + DECRYTPION_WINDOW):
             #Perform MAC verification
             receiver_macinput = canid.to_bytes(4,'big') + countercandidate.to_bytes(4,'big') + data[2:]
             verificationstatus = verifymac(g_macgenalgo, g_macgeneration, receiver_macinput, data[0:2])
             if(DECRYPT_OK == verificationstatus):
-                g_receivercounter[g_canid] = countercandidate
+                g_receivercounter.value = countercandidate
                 break
             countercandidate += 1
     else:
@@ -315,6 +307,7 @@ def initializeencryptionscheme(nonce_algo,
     '''Function to initialize different encryption objects for encryption scheme'''
     global g_noncecreation, g_keystreamgen, g_macgeneration, g_canid
     global g_noncealgo, g_keystreamalgo, g_macgenalgo
+    global g_sendercounter, g_receivercounter
     
 
     #Initilaize the objects for encryption scheme
@@ -325,6 +318,9 @@ def initializeencryptionscheme(nonce_algo,
     g_keystreamgen = initencryptionobject(keystream_gen_algo)
     g_macgeneration = initencryptionobject(mac_gen_algo)
     g_canid = canid
+
+    g_sendercounter = multiprocessing.Value('i', 1)
+    g_receivercounter = multiprocessing.Value('i', 1)
 
 def deinitencryptionscheme():
     '''Function to de-init different encryption objects for encryption scheme'''
@@ -353,10 +349,10 @@ def setencryptionalgo(algorithm):
     g_encryption = initencryptionobject(g_encryptionalgo)
 
 def getsendercounter():
-    global g_sendercounter, g_canid
-    return g_sendercounter
+    global g_sendercounter
+    return g_sendercounter.value
 
 def getreceivercounter():
-    global g_receivercounter, g_canid
-    return g_receivercounter
+    global g_receivercounter
+    return g_receivercounter.value
     

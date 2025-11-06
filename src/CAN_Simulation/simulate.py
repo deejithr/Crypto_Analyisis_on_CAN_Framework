@@ -152,6 +152,15 @@ class Node:
                     if(True == firstCall):
                         next_execution_ns = prev = time.perf_counter_ns()
                     deadline = next_execution_ns + int(DELAY_IN_S * CONVERT_S_TO_NS)
+
+                    if(True != firstCall):
+                        # Consider Deadline missed, only if the value exceeds more 
+                        # than 2ms from the period
+                        if ((now > deadline) and
+                            (now - deadline) > 2000000):
+                            deadlinemisscounts.value += 1
+                            if (True == DEBUG_PRINT):
+                                print("Deadline missed counts : ", deadlinemisscounts.value)
                     
                     # Perform Encryption
                     encrypteddata, encryptiontime = perform_encryption(can_msg.data, 
@@ -183,17 +192,9 @@ class Node:
                         firstCall = False
                     else:
                         if (True == DEBUG_PRINT):
-                            print("Period: ", (now - prev) * CONVERT_NS_TO_MS)
+                            print("Period: ", (now - prev) * CONVERT_NS_TO_MS + " ms")
                             print("now : ", now)
                             print("deadline : ", deadline)
-
-                        # Consider Deadline missed, only if the value exceeds more 
-                        # than 2ms from the period
-                        if ((now > deadline) and
-                            (now - deadline) > 2000000):
-                            deadlinemisscounts.value += 1
-                            if (True == DEBUG_PRINT):
-                                print("Deadline missed counts : ", deadlinemisscounts.value)
 
                         # Next Execution Window
                         next_execution_ns += int(DELAY_IN_S * CONVERT_S_TO_NS)

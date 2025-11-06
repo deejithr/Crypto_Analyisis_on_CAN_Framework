@@ -24,7 +24,6 @@ sim = None
 pid_main= 0
 
 
-
 ################################################################################
 # Functions
 ################################################################################    
@@ -35,7 +34,7 @@ def selectencryptionalgo():
     # Reset the array of encryption and decryption samples for the selected algorithm
     app.resetsamples(selected)
     # Set the description of the algorithm
-    app.insertdescription(selected)
+    app.insertdescription(app.algodescptext, app.getcipherdescription(selected))
 
 
 

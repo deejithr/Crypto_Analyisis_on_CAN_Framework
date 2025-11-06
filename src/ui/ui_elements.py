@@ -41,7 +41,7 @@ BENCHMARK_STOP_SIM = 3
 BENCHMARK_DEINIT = 4
 
 # Periodicity to print messages in the console
-CONSOLE_LOGGING_PERIOD = 500
+CONSOLE_LOGGING_PERIOD = 200
 
 # Description information for each cipher
 cipherdescription = {
@@ -131,9 +131,12 @@ cipherdescription = {
 }
 
 # Description for Encryption Scheme
-encryptionschemedescription = {
+encryptionschemedescription = [
+["Encryption Scheme\n", "heading"],
+["\nThe Encryption Scheme aims at authentication and replay protection for CAN communication.Along with the encrypted payload, a truncated MAC shall be sent to ensure authenticity of the sender. An incrementing counter shall be maintained at both sender and receiver side for each individual CAN ID. The counter shall be a 16-bit or 24-bit counter and is not transmitted in payload and is used as an input for data encryption and MAC generation. \n", "default"],
+["\nThe sender increments this counter on successful transmission of CAN frame and the receiver increments the counter on successful reception. On reception of a CAN frame, the receiver increments its counter and then performs decryption and MAC verification using that value. An attempt at decryption and MAC verification with an increment of 2 to the counter shall be performed if the counter increment of 1 doesn’t satisfy verification. If verification still fails, then the frame will be dropped. On successful verification, the counter shall be made as the value for which the verification passed. \n", "default"],
+]
 
-}
 
 # Algorithms that can be selected for Nonce Creation
 nonce_creation_gen_algo =[
@@ -299,7 +302,7 @@ class CANSimGUI(tb.Window):
         cryalgo_descp_frame.pack(fill="both",padx=10, pady=20)
         self.algodescptext = ScrolledText(cryalgo_descp_frame, height=15, bootstyle="secondary", wrap=tk.WORD)
         self.algodescptext = self.descrpareainit(self.algodescptext)
-        self.insertdescription("RC4")
+        self.insertdescription(self.algodescptext, cipherdescription["RC4"])
         self.algodescptext.pack(side="left", fill="both", expand=True, padx=10, pady=10)
 
         # Tab for Performance Measurements
@@ -447,6 +450,7 @@ class CANSimGUI(tb.Window):
         self.encryptionschemedescp_entry = ScrolledText(encryption_scheme_subframe3, height=15, bootstyle="secondary", wrap=tk.WORD)
         # Initialize font properties for the encryption scheme description area
         self.encryptionschemedescp_entry = self.descrpareainit(self.encryptionschemedescp_entry)
+        self.insertdescription(self.encryptionschemedescp_entry, encryptionschemedescription)
         self.encryptionschemedescp_entry.pack(side="top", padx=10, pady=10, fill=BOTH)
 
         #Console for Printing the logs
@@ -503,6 +507,9 @@ class CANSimGUI(tb.Window):
             encrypt_cpuper[algo] = []
             decrypt_cpuper[algo] = []
 
+    def getcipherdescription(self, algo):
+        return cipherdescription[algo]
+    
     def do_start_stop_simulation(self):
         '''Function called on pressing the Start/Stop button'''
         global ui_receiverqueue, ui_senderqueue
@@ -604,18 +611,18 @@ class CANSimGUI(tb.Window):
 
         return text_area
     
-    def insertdescription(self,selected):
+    def insertdescription(self, entry, text):
         '''Insert description for each Cipher'''
-        self.algodescptext.text.configure(state="normal")
+        entry.text.configure(state="normal")
         # Clear the area first
-        self.algodescptext.delete("1.0", "end")
+        entry.delete("1.0", "end")
         #Print the description
-        for eachline in cipherdescription[selected]:
+        for eachline in text:
             if(eachline[1] != "default"):
-                self.algodescptext.insert(tb.END, eachline[0], eachline[1])
+                entry.insert(tb.END, eachline[0], eachline[1])
             else:
-                self.algodescptext.insert(tb.END, eachline[0])
-        self.algodescptext.text.configure(state="disabled")
+                entry.insert(tb.END, eachline[0])
+        entry.text.configure(state="disabled")
 
     def inserttotableview(self, text):
         '''Add contents to the Perfomance Metrics Table view'''
@@ -691,13 +698,13 @@ class CANSimGUI(tb.Window):
         self.receivercounter_entry.insert(0, str(rcounter))
         
         if(True == simulationstate.value):
-            # Schedule this function to be called again after 3000 milliseconds (3 seconds)
-            self.after(3000, self.update_counters)
+            # Schedule this function to be called again after 1500 milliseconds (1.5 seconds)
+            self.after(1500, self.update_counters)
     
     def display_popup(self):
         pid = os.getpid()
         p = psutil.Process(pid)
-        p.cpu_affinity([3])
+        p.cpu_affinity([2])
 
         top = Toplevel()
         top.title("Benchmark Progress")
@@ -725,7 +732,7 @@ class CANSimGUI(tb.Window):
         if(BENCHMARK_INIT == self.benchmarkstate):
             pid = os.getpid()
             p = psutil.Process(pid)
-            p.cpu_affinity([3])
+            p.cpu_affinity([2])
             #Setup the benchmark variables
             # This is to indicate the results are from benchmarking
             self.benchmarkresults = True
