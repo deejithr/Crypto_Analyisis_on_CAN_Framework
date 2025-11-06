@@ -128,7 +128,7 @@ class Node:
         # Pin to core 1
         pid_sender = os.getpid()
         p = psutil.Process(pid_sender)
-        p.cpu_affinity([1])
+        p.cpu_affinity([0])
 
         # For deadlinemiss counts
         # Reset the deadline miss counts
@@ -192,7 +192,7 @@ class Node:
                         firstCall = False
                     else:
                         if (True == DEBUG_PRINT):
-                            print("Period: ", (now - prev) * CONVERT_NS_TO_MS + " ms")
+                            print("Period: " + str((now - prev) * CONVERT_NS_TO_MS) + " ms")
                             print("now : ", now)
                             print("deadline : ", deadline)
 
