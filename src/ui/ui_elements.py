@@ -40,6 +40,15 @@ BENCHMARK_WAIT_FOR_COMPLETION = 2
 BENCHMARK_STOP_SIM = 3
 BENCHMARK_DEINIT = 4
 
+
+#Enums for Replay Attack Simulation
+REPLAYSIM_INIT = 0
+REPLAYSIM_RECORD_FRAMES = 1
+REPLAYSIM_WAIT_FOR_RECORD_COMPLETION = 2
+REPLAYSIM_REPLAY_FRAMES = 3
+REPLAYSIM_WAIT_FOR_REPLAY_COMPLETION = 4
+REPLAYSIM_DEINIT = 5
+
 # Periodicity to print messages in the console
 CONSOLE_LOGGING_PERIOD = 200
 
@@ -91,10 +100,19 @@ cipherdescription = {
     ],
 
     "xTEA" : [
-        ["xTEA\n", "heading"],
-        ["Tiny Encryption Algorithm\n", "default"],
-        ["To be implemented\n\n", "default"],
-        ["Raw data Transmitted", "default"]
+        ["XTEA\n", "heading"],
+        ["\nThe XTEA (eXtended Tiny encryption Algorithm) algorithm is a Feistel cipher that uses a 64-bit block size and a 128-bit key. It is an upgradation over the original TEA (Tiny Encryption Algorithm) to correct the key scheduling weakness related to the TEA Algorithm. The algorithm typically uses 32 rounds.\n", "default"],
+        ["\nIt uses a Feistel structure, meaning in each round, half of the data block is used to modify the other half, and then the halves are swapped. But in the XTEA variation, the halves are modified sequentially rather than swapped. The following are the operations associated with xTEA algorithms \n", "default"],
+        ["\nBlock Split: \n", "bold"],
+        ["\nThe 64 bit input block is first divided into two 32-bit unsigned integers denoted as v0 and v1 \n", "default"],
+        ["\nKey Scheduling: \n", "bold"],
+        ["\nXTEA uses a more complex key schedule that uses an integer constant called delta (0x9E3779B9, derived from the golden ratio) to generate subkeys dynamically within the round function. The 128-bit master key is split into four 32-bit words denoted as K[0] to K[3] \n", "default"],
+        ["\nRound Function: \n", "bold"],
+        ["\nEach round involves a mixing function that applies a combination of bitwise shifts, XOR, and modulo 232 additions/subtractions to the data halves. The key scheduling uses a running sum variable, incremented by delta in each cycle, to select different subkeys from the main key array for different rounds. \n", "default"],
+        ["\nIteration: \n", "bold"],
+        ["\nThese operations are repeated for a set number of rounds to ensure the ciphertext is sufficiently mixed and secure. \n", "default"],
+        ["\nThe decryption process performs the reverse operation of the encryption by executing these steps in the reverse order, and using subtraction in place of addition. \n", "default"],
+        ["\nThe TEA algorithm was found to be vulnerable to key related attacks, where the attacker could exploit the key biases to compromise the ciphertext. The key schedule was redesigned to use all of the 4 words of the 32 bit key along with the delta coefficient. XTEA has thus enhanced the security of TEA while ensuring the lightweight characteristics of TEA was maintained \n", "default"]
     ],
 
     "PRESENT" : [
@@ -124,9 +142,23 @@ cipherdescription = {
     ],
 
     "AES128" : [
-        ["AES128\n", "heading"],
-        ["To be implemented\n\n", "default"],
-        ["Raw data Transmitted", "default"]
+        ["AES128\n\n", "heading"],
+        ["Advanced Encryption Standard or AES falls under symmetric block cipher category with a block size of 128 bits and can support Key sizes in the range 128, 192 or 256 bits. It is one of the traditional algorithms used in automotive industry. \n", "default"],
+        ["\nThe encryption process involves an initial key addition followed by multiple rounds, each containing four transformations - \n", "default"],
+        ["\n• Substitution of bytes (S-Box substitution) \n", "bold"],
+        ["• Shift Rows \n", "bold"],
+        ["• Mixing Columns (Matrix Multiplication) \n", "bold"],
+        ["• Round key addition\n", "bold"],
+        ["\nThe number of rounds needed depends on the keysize. In this dissertation, the keysize is taken as 128 bits and hence the rounds required is 10. Here, the plaintext length required for AES is 128bit. As CAN data length is of 64bits, in this dissertation, for the comparison of cryptographic algorithms, AES is treated like a stream cipher, by using AES-128 in CTR mode. Different modes are supported by AES like Electronic Codebook(ECB), Cipher Block Chaining (CBC), Galois/Counter mode (GCM), Counter (CTR) and then Cipher Feedback (CFB)/Output Feedback mode (OFB). The Counter mode (CTR) creates a stream cipher by encrypting a counter value, which is then XOR-ed with the plain text. \n", "default"],
+        ["\nSteps involved in AES Encryption are: \n", "default"],
+        ["\n• Initial Round Key addition: \n", "bold"],
+        ["The 128 bit plaintext is combined with the first round-key derived using the add round key transformation \n", "default"],
+        ["\n• Subsequent rounds: \n", "bold"],
+        ["The data block then goes through a series of repetitive rounds, where each round includes the 4 transformations mentioned above. \n", "default"],
+        ["\n• Final round: \n", "bold"],
+        ["The final round includes all transformations, except mix columns. \n", "default"],
+        ["\nIn this dissertation, for the performance analysis of cryptographic algorithms. the AES-128 encryption algorithm is run in counter mode (CTR) and is used to generate the key stream with the above mentioned steps. The key stream thus generated is then XOR-ed with the plain text to produce the ciphertext. In later phase of this dissertation, when implementing the Encryption Scheme, AES will be used to generate the MAC, which shall be appended along with the encrypted data in the CAN frame. \n", "default"],
+        ["\nAES is an open and globally accepted standard. It is highly secure and resistant to brute force attacks, especially if longer key sizes are used. It is regarded to be computationally efficient with high speed performance in hardware. In AUTOSAR SecOc, AES is one of the recommended algorithms for calculating the MAC of the payload in the Protocol Data Unit (PDU). The algorithm supports different block and key sizes, which makes it possible to be used or adapted to various security needs. Implementing AES in software can be complex and requires significant processing. For a single block, the time complexity of AES encryption algorithm is regarded as O(1), whereas when it is used in multiple blocks or in a particular mode of operation, it is time complexity is regarded as O(n), as it scales linearly with n, the number of blocks. \n", "default"]
     ],
 }
 
@@ -139,6 +171,13 @@ encryptionschemedescription = [
 ["\n\nKeystream: S = encrypt (K2, N)", "default"],
 ["\n\nPayload Data encryption: C = P xor S", "default"],
 ["\n\nMAC generation: MAC[0:2] = CMAC(K3, (CAN_ID || counter || C))", "default"]
+]
+
+replayattackdescription =[
+["Replay Attack Simulation\n", "heading"],
+["\nIntention of replay attack simulation is to ensure that, with the encryption mechanism implemented, the receiver is able to detect replayed frames and discard them. If only the encryption of payload data is done, it is not possible for the receiver to identify if the frame that has been received is a replayed frame or not. With the encryption scheme described above, a counter is maintained at both sender side and receiver side. The sender increments the counter whenever there is a successful transmission of message and the receiver increments the counter whenever it accepts a message. Whenever the receiver receives a message, it tries to perform MAC verification, by using the stored counter +1 value. If the MAC calculated at the receiver side with this counter value does not match the truncated MAC available in the CAN frame, the receiver will discard the message.\n", "default"],  
+["\nReplay attacks will be modelled by intentionally re-sending previously transmitted encrypted frames. On starting the replay simulation, the sender will first normally send the frames with the current counter value and incrementing it each time a message is send. These sent frames shall be captured and saved to a file. \n", "default"],
+["\nThe receiver will accept the frames as the MAC verification will be successful as the counter values are in sync with the sender. After certain number of frames are sent, the simulation shall be stopped. The captured frames will then be loaded back from the file and the sender will send these messages as such, without any changes. Now, the receiver on performing MAC verification of these replayed frames, will discard the frames as the verification fails. Since the implicit counter value in the replayed frames are old, they will never pass the MAC verification. In the UI, the discarded frames can be seen in the Receiver console marked in red with a cross mark next to them. With this, demonstration of the resistance to replay attack is successful \n", "default"]
 ]
 
 
@@ -196,6 +235,9 @@ bm_period = None
 # For encrytpion scheme counter display
 counterthread = None
 
+#For replay attack simulation
+replayattacksimthread = None
+
 ################################################################################
 # Classes
 ################################################################################
@@ -221,6 +263,9 @@ class CANSimGUI(tb.Window):
         self.benchmarkresults = False
         # For Progressbar increments during benchmark results
         self.step = 0
+
+        #----------------------------------- For Replay Simulation --------------------------------#
+        self.replaysim_state = Value('i', REPLAYSIM_INIT)
 
         super().__init__(title="CryptoAnalysis for CAN", themename="simplex")
         self.geometry("1200x768")
@@ -361,6 +406,7 @@ class CANSimGUI(tb.Window):
         self.mac_gen_option = tk.StringVar()
         # For encryption enabled/disabled state, initial state is false
         self.encscheme_state = tk.BooleanVar(value=False)
+        self.replaysim_start = tk.BooleanVar(value=False)
 
         encryption_scheme_tab = tb.Frame(notebook)
         notebook.add(encryption_scheme_tab, text="Encryption Scheme")
@@ -490,6 +536,33 @@ class CANSimGUI(tb.Window):
         # Tab 4: Replay Attack Simulation
         replayattacksim_tab = tb.Frame(notebook)
         notebook.add(replayattacksim_tab, text="Replay Attack Simulation")
+
+        # For replay attack enable/disable
+        replay_onoff_frame = tb.Frame(replayattacksim_tab)
+        replay_onoff_frame.pack(side="top", padx=10, fill=tk.X)
+        self.replaysimbtn = tb.Button(replay_onoff_frame, text="▶ Simulate Replay Attack",
+                                   bootstyle="success", command=self.do_replayattacksim)
+        self.replaysimbtn.pack(side="left", padx=10, pady=5)
+
+
+        replaysim_masterframe1 = tb.Frame(replayattacksim_tab)
+        replaysim_masterframe1.pack(side="left", fill=tk.X)
+
+        # Displaying replay attack simulation status 
+        replaysim_subframe1 = tb.Frame(replaysim_masterframe1, borderwidth=1, relief="raised")
+        replaysim_subframe1.pack(side="left", padx=10, fill=tk.Y, expand=True)
+
+        self.replaysim_entry1 = ScrolledText(replaysim_subframe1, height=15, width=60, bootstyle="secondary", wrap=tk.WORD)
+        self.replaysim_entry1.pack(padx=10, pady=5, expand=True, fill=tk.Y)
+
+        # For Replay Attack Simulation
+        replaysim_subframe3 = tb.Frame(replaysim_masterframe1)
+        replaysim_subframe3.pack(fill="both", padx=10)
+        self.replaysim_descrpentry = ScrolledText(replaysim_subframe3, height=15, bootstyle="secondary", wrap=tk.WORD)
+        # Initialize font properties for the encryption scheme description area
+        self.replaysim_descrpentry = self.descrpareainit(self.replaysim_descrpentry)
+        self.insertdescription(self.replaysim_descrpentry, replayattackdescription)
+        self.replaysim_descrpentry.pack(side="top", padx=10, pady=10, fill=BOTH)
         
         #------------------------------------------------------------------------------------------#
 
@@ -563,7 +636,8 @@ class CANSimGUI(tb.Window):
                                   decrypt_samples, decrypt_cpuper,
                                   self.encscheme_state,
                                   self.benchmarkinprogress,
-                                  ready_event
+                                  ready_event,
+                                  self.replaysim_state
                                   )
 
     def printtosenderconsole(self):
@@ -728,6 +802,71 @@ class CANSimGUI(tb.Window):
 
         # Start the periodic update function
         self.update_label(label, pbar)
+
+    def do_replayattacksim(self):
+        global sentmessagescount
+        
+        #Run StateMachine
+        if(REPLAYSIM_INIT == self.replaysim_state.value):
+            pid = os.getpid()
+            p = psutil.Process(pid)
+            p.cpu_affinity([2])
+
+            # Display the replay simulation information
+            self.replaysimbtn.config(text="■ Replay Sim Running", bootstyle="danger")
+            self.replaysim_entry1.delete("1.0", "end")
+            self.replaysim_entry1.insert(tb.END, "Replay attack simulation started...\n")
+
+            # Set the encryption state first
+            self.encscheme_state.set(True)
+            # Initialize the objects for encryption scheme
+            initializeencryptionscheme(self.nonce_creation_option.get(),
+                                   self.keystream_gen_option.get(),
+                                   self.mac_gen_option.get(),
+                                   int(self.canconf_entry1.get(),16))
+            # switch to the next state
+            self.replaysim_state.value = REPLAYSIM_RECORD_FRAMES
+
+        elif (REPLAYSIM_RECORD_FRAMES == self.replaysim_state.value):
+            # Start the simulation
+            self.do_start_stop_simulation()
+            self.replaysim_entry1.insert(tb.END, "Recording CAN frames...\n")
+            #Change to next State
+            self.replaysim_state.value = REPLAYSIM_WAIT_FOR_RECORD_COMPLETION
+        
+        elif (REPLAYSIM_WAIT_FOR_RECORD_COMPLETION == self.replaysim_state.value):
+            if(sentmessagescount.value >= 200):
+                # Stop the simulation
+                self.do_start_stop_simulation()
+                self.replaysim_entry1.insert(tb.END, "Recording Stopped...\n")
+                time.sleep(1)
+                #Change to next State
+                self.replaysim_state.value = REPLAYSIM_REPLAY_FRAMES
+
+        elif (REPLAYSIM_REPLAY_FRAMES == self.replaysim_state.value):
+            self.replaysim_entry1.insert(tb.END, "Start Replaying Frames...\n")
+            #Change to next State
+            self.replaysim_state.value = REPLAYSIM_WAIT_FOR_REPLAY_COMPLETION
+            # Start the simulation
+            self.do_start_stop_simulation()
+        
+        elif (REPLAYSIM_WAIT_FOR_REPLAY_COMPLETION == self.replaysim_state.value):
+            if(sentmessagescount.value >= 200):
+                # Stop the simulation
+                self.do_start_stop_simulation()
+                self.replaysim_entry1.insert(tb.END, "Replay Stopped...\n")
+                #Change to next State
+                self.replaysim_state.value = REPLAYSIM_DEINIT
+        
+        elif (REPLAYSIM_DEINIT == self.replaysim_state.value):
+            # Reset the state to REPLAYSIM_INIT
+            self.replaysim_state.value = REPLAYSIM_INIT
+            self.replaysimbtn.config(text="▶ Simulate Replay Attack", bootstyle="success")
+        
+        # Schedule the task every 1 second, only in states other than INIT
+        if(REPLAYSIM_INIT != self.replaysim_state.value):
+            self.after(1000, self.do_replayattacksim)
+
 
     def do_benchmark(self):
         global sentmessagescount, deadlinemiss, bm_algo, bm_period

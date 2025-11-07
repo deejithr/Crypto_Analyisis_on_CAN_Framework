@@ -10,6 +10,7 @@ It includes :
 # Imports
 ################################################################################
 import can
+import binascii
 from typing import List
 import time
 from datetime import datetime as dt
@@ -73,7 +74,8 @@ class Node:
                       crypt_cpuper,
                       encscheme_state,
                       benchmarkinprogress,
-                      ready_event
+                      ready_event,
+                      replay_sim_state
                       ):
         '''Function to create process for the Node'''
         # Create process based on node type
@@ -87,7 +89,8 @@ class Node:
                                                                                         crypt_cpuper,
                                                                                         encscheme_state,
                                                                                         benchmarkinprogress,
-                                                                                        ready_event
+                                                                                        ready_event,
+                                                                                        replay_sim_state
                                                                                         ))
             elif self.nodetype == NODE_RECEIVER:
                 self.process =  multiprocessing.Process(target=self.action_receiver, args=(console_queue,
@@ -96,7 +99,8 @@ class Node:
                                                                                            crypt_cpuper,
                                                                                            encscheme_state,
                                                                                            benchmarkinprogress,
-                                                                                           ready_event
+                                                                                           ready_event,
+                                                                                           replay_sim_state
                                                                                         ))
         except Exception as e:
             print("[Error] Unable to create process {e}")
@@ -115,7 +119,8 @@ class Node:
                       encrypt_samples, encrypt_cpuper,
                       encscheme_state,
                       benchmarkinprogress, 
-                      ready_event
+                      ready_event,
+                      replay_sim_state
                       ):
         '''Function for actions to be performed by the sender'''
         global can_msg, DELAY_IN_S
@@ -129,6 +134,15 @@ class Node:
         pid_sender = os.getpid()
         p = psutil.Process(pid_sender)
         p.cpu_affinity([0])
+
+        #Open the file for saving the CAN frames in case of Replay Attack Simulation
+        if(2 == replay_sim_state.value):
+            fp = open("CAN_Frames_Saved.txt", "w")
+
+        #If replay sim state is in REPLAYSIM_REPLAY_FRAMES
+        if(4 == replay_sim_state.value):
+            fp = open("CAN_Frames_Saved.txt", "r")
+            CANFrames = fp.readlines()
 
         # For deadlinemiss counts
         # Reset the deadline miss counts
@@ -147,76 +161,109 @@ class Node:
                    ((True == benchmarkinprogress) and
                    (200 > sentmessagescount.value))
                    ):
-                    # Get the current timestamp
-                    now = time.perf_counter_ns()
-                    if(True == firstCall):
-                        next_execution_ns = prev = time.perf_counter_ns()
-                    deadline = next_execution_ns + int(DELAY_IN_S * CONVERT_S_TO_NS)
-
-                    if(True != firstCall):
-                        # Consider Deadline missed, only if the value exceeds more 
-                        # than 2ms from the period
-                        if ((now > deadline) and
-                            (now - deadline) > 2000000):
-                            deadlinemisscounts.value += 1
-                            if (True == DEBUG_PRINT):
-                                print("Deadline missed counts : ", deadlinemisscounts.value)
                     
-                    # Perform Encryption
-                    encrypteddata, encryptiontime = perform_encryption(can_msg.data, 
-                                                                       encrypt_samples, 
-                                                                       encrypt_cpuper,
-                                                                       encscheme_state,
-                                                                       can_msg.arbritration_id,
-                                                                       can_msg.isextended,
-                                                                       ready_event
-                                                                       )
-                    print("Sender: Data before Encryption:  " + str(can_msg.data))
+                    #Check if state is in REPLAYSIM_REPLAY_FRAMES
+                    if(4 != replay_sim_state.value):
+                        # Get the current timestamp
+                        now = time.perf_counter_ns()
+                        if(True == firstCall):
+                            next_execution_ns = prev = time.perf_counter_ns()
+                        deadline = next_execution_ns + int(DELAY_IN_S * CONVERT_S_TO_NS)
 
-                    msg = can.Message(
-                        arbitration_id=can_msg.arbritration_id,
-                        data=encrypteddata,
-                        is_extended_id=can_msg.isextended,
-                        is_rx = False)
+                        if(True != firstCall):
+                            # Consider Deadline missed, only if the value exceeds more 
+                            # than 2ms from the period
+                            if ((now > deadline) and
+                                (now - deadline) > 2000000):
+                                deadlinemisscounts.value += 1
+                                if (True == DEBUG_PRINT):
+                                    print("Deadline missed counts : ", deadlinemisscounts.value)
 
-                    msg.timestamp = time.time()
-                    self.nodebus.send(msg)
-                    # Increment the count of sent messages
-                    sentmessagescount.value +=1
-                    console_queue.put(f"Sent: {msg}    t_encrypt: {encryptiontime:.3f} us")
-                    print("action_sender: sentmessagescount = ", sentmessagescount.value)
+                        # Perform Encryption
+                        encrypteddata, encryptiontime = perform_encryption(can_msg.data, 
+                                                                           encrypt_samples, 
+                                                                           encrypt_cpuper,
+                                                                           encscheme_state,
+                                                                           can_msg.arbritration_id,
+                                                                           can_msg.isextended,
+                                                                           ready_event
+                                                                           )
+                        print("Sender: Data before Encryption:  " + str(can_msg.data))
 
+                        msg = can.Message(
+                            arbitration_id=can_msg.arbritration_id,
+                            data=encrypteddata,
+                            is_extended_id=can_msg.isextended,
+                            is_rx = False)
 
-                    if(True == firstCall):
-                        time.sleep(DELAY_IN_S)
-                        firstCall = False
-                    else:
-                        if (True == DEBUG_PRINT):
-                            print("Period: " + str((now - prev) * CONVERT_NS_TO_MS) + " ms")
-                            print("now : ", now)
-                            print("deadline : ", deadline)
+                        msg.timestamp = time.time()
+                        self.nodebus.send(msg)
+                        # Increment the count of sent messages
+                        sentmessagescount.value +=1
+                        console_queue.put(f"Sent: {msg}    t_encrypt: {encryptiontime:.3f} us")
+                        print("action_sender: sentmessagescount = ", sentmessagescount.value)
 
-                        # Next Execution Window
-                        next_execution_ns += int(DELAY_IN_S * CONVERT_S_TO_NS)
-                        prev = now
+                        # If recording frames for replay attack is On
+                        if(2 == replay_sim_state.value):
+                            if(200 > sentmessagescount.value):
+                                data_hex = binascii.hexlify(msg.data).decode('utf-8').upper()
+                                fp.write(data_hex + "\n")
+                            else:
+                                #Stop recording once the message count reaches 200
+                                fp.close()
 
-                        # to send the message with the configured delay, Calculate how long to sleep
-                        time_to_sleep_ns = next_execution_ns - time.perf_counter_ns()
-                        if time_to_sleep_ns > 0:
+                        if(True == firstCall):
+                            time.sleep(DELAY_IN_S)
+                            firstCall = False
+                        else:
                             if (True == DEBUG_PRINT):
-                                print("Sleep time: " ,  time_to_sleep_ns * CONVERT_NS_TO_MS)
-                            # Provide the calculated sleep time
-                            time.sleep(time_to_sleep_ns * CONVERT_NS_TO_S)
+                                print("Period: " + str((now - prev) * CONVERT_NS_TO_MS) + " ms")
+                                print("now : ", now)
+                                print("deadline : ", deadline)
+
+                            # Next Execution Window
+                            next_execution_ns += int(DELAY_IN_S * CONVERT_S_TO_NS)
+                            prev = now
+
+                            # to send the message with the configured delay, Calculate how long to sleep
+                            time_to_sleep_ns = next_execution_ns - time.perf_counter_ns()
+                            if time_to_sleep_ns > 0:
+                                if (True == DEBUG_PRINT):
+                                    print("Sleep time: " ,  time_to_sleep_ns * CONVERT_NS_TO_MS)
+                                # Provide the calculated sleep time
+                                time.sleep(time_to_sleep_ns * CONVERT_NS_TO_S)
+                    
+                    elif(4 == replay_sim_state.value):
+                        #Increment the sentmessagescount
+                        sentmessagescount.value += 1
+                        if(sentmessagescount.value <= len(CANFrames)):
+                            data = binascii.unhexlify(CANFrames[sentmessagescount.value - 1].replace("\n",""))
+                            #Frame the message 
+                            msg = can.Message(
+                            arbitration_id=can_msg.arbritration_id,
+                            data=data,
+                            is_extended_id=can_msg.isextended,
+                            is_rx = False)
+
+                            msg.timestamp = time.time()
+                            #Send the CAN message
+                            self.nodebus.send(msg)
+
+                            # Sleep until next periodicity
+                            time.sleep(DELAY_IN_S)
+
+
             except Exception as e:
                 print("[Error] Transmission error. {e}")
                 import traceback
                 traceback.print_exc()
 
+
         print("Sender Node: " + self.nodename +  " de-initialized")
         self.nodestatus = NODE_DEINITIALIZED
         
     def action_receiver(self, console_queue, simulationstate, decrypt_samples, decrypt_cpuper,
-                        encscheme_state, benchmarkinprogress, ready_event
+                        encscheme_state, benchmarkinprogress, ready_event, replay_sim_state
                         ):
         '''Function for actions to be performed by the Receiver'''
         global pid_receiver
@@ -297,7 +344,8 @@ class CanSim:
                          decrypt_samples, decrypt_cpuper,
                          encscheme_state,
                          benchmarkinprogress,
-                         ready_event):
+                         ready_event,
+                         replay_sim_state):
         '''This function starts the simulation'''
 
         # Set the simulation State to TRUE
@@ -311,7 +359,8 @@ class CanSim:
                              decrypt_samples, decrypt_cpuper,
                              encscheme_state,
                              benchmarkinprogress,
-                             ready_event)
+                             ready_event,
+                             replay_sim_state)
 
     
     def stop_simulation(self, simulationstate):
@@ -345,16 +394,16 @@ class CanSim:
 def instantiatenodes(objbus, squeue, rqueue, simstate, deadlinemc, 
                      sentmsgc, encrypt_samples, encrypt_cpuper, 
                      decrypt_samples, decrypt_cpuper,
-                     encscheme_state, benchmarkinprogress, ready_event):
+                     encscheme_state, benchmarkinprogress, ready_event, replay_sim_state):
     '''Function to start threads for each Node in the Can bus'''
     for eachNode in objbus.nodes:
         #Check the Node type
         if(NODE_SENDER == eachNode.nodetype):
             eachNode.createprocess(squeue, simstate, deadlinemc, sentmsgc, encrypt_samples, encrypt_cpuper,
-                                   encscheme_state, benchmarkinprogress, ready_event)
+                                   encscheme_state, benchmarkinprogress, ready_event, replay_sim_state)
         else:
             eachNode.createprocess(rqueue, simstate, None, None, decrypt_samples, decrypt_cpuper,
-                                   encscheme_state, None, ready_event)
+                                   encscheme_state, None, ready_event, None)
 
 def setcanmessage(canid, data, isExtended):
     '''Function sets the parameters for CAN Message'''
