@@ -30,6 +30,10 @@ The following encryption algorithms are currently selected. (TBD)
 
 Design of the framework is done in such a way that, new algorithms can be plugged in with little to no change in the framework
 
+Integrated the **Encryption Mechanism**
+
+Integrated **Replay Attack Simulation**
+
 
 ## Installation
 
@@ -63,15 +67,28 @@ Run the script `Run.sh` to initate the UI
 ## UI
 Snapshots of the UI
 
-<img width="1201" height="805" alt="UI_1" src="images/Screenshot 2025-10-04 163018.png" />
+### Simulation Window
 
-<img width="1200" height="802" alt="UI_2" src="images/Screenshot 2025-10-04 163156.png" />
+<img width="1200" height="800" alt="UI_1" src="images/Simulation.png" />
 
-## RoadMap
-- Currently only RC4 encryption is implemented, which directly encrypts the data, and the data is decoded at the reciever side. This shall be expanded with Freshness value and MAC added
-- Other algorithms shall be implemented going forward
-- For MAC based algorithms, addition of Freshness value/counter, to provide resistance to replay attacks
-- In performance metrics. encryption and decryption times have been implemented. Other metrics like deadline miss counts, cpu and ram usage need to be implemented
+### Performance Window
+
+<img width="1200" height="800" alt="UI_2" src="images/Performance Window.png" />
+
+### Benchmark Process
+
+<img width="1200" height="800" alt="UI_3" src="images/Benchmark.png" />
+
+### Encryption Scheme
+
+<img width="1200" height="800" alt="UI_4" src="images/Encryption_Scheme.png" />
+
+### Replay Attack Simulation
+
+<img width="1200" height="800" alt="UI_5" src="images/Replay_Attack_Simulation.png" />
+
+
+
   
 
 
