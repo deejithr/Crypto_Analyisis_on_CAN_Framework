@@ -50,7 +50,7 @@ REPLAYSIM_WAIT_FOR_REPLAY_COMPLETION = 4
 REPLAYSIM_DEINIT = 5
 
 # Periodicity to print messages in the console
-CONSOLE_LOGGING_PERIOD = 200
+CONSOLE_LOGGING_PERIOD = 335
 
 # Description information for each cipher
 cipherdescription = {
@@ -782,7 +782,7 @@ class CANSimGUI(tb.Window):
     def display_popup(self):
         pid = os.getpid()
         p = psutil.Process(pid)
-        p.cpu_affinity([2])
+        p.cpu_affinity([3])
 
         top = Toplevel()
         top.title("Benchmark Progress")
@@ -810,7 +810,7 @@ class CANSimGUI(tb.Window):
         if(REPLAYSIM_INIT == self.replaysim_state.value):
             pid = os.getpid()
             p = psutil.Process(pid)
-            p.cpu_affinity([2])
+            p.cpu_affinity([3])
 
             # Display the replay simulation information
             self.replaysimbtn.config(text="■ Replay Sim Running", bootstyle="danger")
@@ -835,7 +835,7 @@ class CANSimGUI(tb.Window):
             self.replaysim_state.value = REPLAYSIM_WAIT_FOR_RECORD_COMPLETION
         
         elif (REPLAYSIM_WAIT_FOR_RECORD_COMPLETION == self.replaysim_state.value):
-            if(sentmessagescount.value >= 200):
+            if(sentmessagescount.value >= REPLAY_MESSAGE_COUNT):
                 # Stop the simulation
                 self.do_start_stop_simulation()
                 self.replaysim_entry1.insert(tb.END, "Recording Stopped...\n")
@@ -851,7 +851,7 @@ class CANSimGUI(tb.Window):
             self.do_start_stop_simulation()
         
         elif (REPLAYSIM_WAIT_FOR_REPLAY_COMPLETION == self.replaysim_state.value):
-            if(sentmessagescount.value >= 200):
+            if(sentmessagescount.value >= REPLAY_MESSAGE_COUNT):
                 # Stop the simulation
                 self.do_start_stop_simulation()
                 self.replaysim_entry1.insert(tb.END, "Replay Stopped...\n")
@@ -875,7 +875,7 @@ class CANSimGUI(tb.Window):
         if(BENCHMARK_INIT == self.benchmarkstate):
             pid = os.getpid()
             p = psutil.Process(pid)
-            p.cpu_affinity([2])
+            p.cpu_affinity([3])
             #Setup the benchmark variables
             # This is to indicate the results are from benchmarking
             self.benchmarkresults = True
@@ -901,7 +901,7 @@ class CANSimGUI(tb.Window):
                 self.deadlinemissbenchmark[bm_algo] = []
 
             #Set the periodicity, after clearing the current value
-            # self.canconf_entry3.delete("1.0", "end")
+            self.canconf_entry3.delete(0, END)
             self.canconf_entry3.insert(0, str(bm_period))
             setmsgperiodicity(bm_period)
             # Start the simulation
@@ -912,7 +912,7 @@ class CANSimGUI(tb.Window):
             self.benchmarkstate = BENCHMARK_WAIT_FOR_COMPLETION
         
         elif (BENCHMARK_WAIT_FOR_COMPLETION == self.benchmarkstate):
-            if(200 <= sentmessagescount.value):
+            if(BENCHMARK_MESSAGE_COUNT <= sentmessagescount.value):
                 #Change to next State
                 self.benchmarkstate = BENCHMARK_STOP_SIM
 
@@ -1099,7 +1099,7 @@ class CANSimGUI(tb.Window):
                     )
                 index += 1
 
-            ax4.legend(loc='upper left')
+            ax4.legend(loc='upper right')
             # Reset the flag
             self.benchmarkresults = False
 

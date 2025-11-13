@@ -133,7 +133,7 @@ class Node:
         # Pin to core 1
         pid_sender = os.getpid()
         p = psutil.Process(pid_sender)
-        p.cpu_affinity([0])
+        p.cpu_affinity([1])
 
         #Open the file for saving the CAN frames in case of Replay Attack Simulation
         if(2 == replay_sim_state.value):
@@ -157,9 +157,9 @@ class Node:
                 if(
                    #Continue normally, if no benchmark in progress
                    (False == benchmarkinprogress) or
-                   #if Performing benchmark, stop after 200 messages
+                   #if Performing benchmark, stop after BENCHMARK_MESSAGE_COUNT messages
                    ((True == benchmarkinprogress) and
-                   (200 > sentmessagescount.value))
+                   (BENCHMARK_MESSAGE_COUNT > sentmessagescount.value))
                    ):
                     
                     #Check if state is in REPLAYSIM_REPLAY_FRAMES
@@ -205,11 +205,11 @@ class Node:
 
                         # If recording frames for replay attack is On
                         if(2 == replay_sim_state.value):
-                            if(200 > sentmessagescount.value):
+                            if(REPLAY_MESSAGE_COUNT > sentmessagescount.value):
                                 data_hex = binascii.hexlify(msg.data).decode('utf-8').upper()
                                 fp.write(data_hex + "\n")
                             else:
-                                #Stop recording once the message count reaches 200
+                                #Stop recording once the message count reaches REPLAY_MESSAGE_COUNT
                                 fp.close()
 
                         if(True == firstCall):
@@ -277,7 +277,7 @@ class Node:
         # Pin to core 2
         pid_receiver = os.getpid()
         p = psutil.Process(pid_receiver)
-        p.cpu_affinity([3])  
+        p.cpu_affinity([2])  
 
         while True == simulationstate.value:
             try:
@@ -285,7 +285,7 @@ class Node:
                 received = self.nodebus.recv(timeout=0.005)
                 if received is not None:
                     # Setting the received flag to True
-                    # received.is_rx = True
+                    received.is_rx = True
                     # Perform Decrytpion and acceptance
                     decrypteddata, decryptiontime, accepted = perform_decryption(received.data,
                                                                                  decrypt_samples, 
@@ -378,7 +378,7 @@ class CanSim:
         ((time.time() - loopstarttime < LOOPTIMEOUT))):
             pass
 
-        #If the sender or receiver process is stil alive, terminate them
+        #If the sender or receiver process is still alive, terminate them
         if(self.CanbusList[0].nodes[0].process.is_alive()):
             self.CanbusList[0].nodes[0].process.terminate()
             print("stop_simulation: Sender Node Stopped")

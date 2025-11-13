@@ -49,6 +49,9 @@ BENCHMARKPERIOD = [100, 50, 20, 10, 5]
 # For Encryption State
 DECRYTPION_WINDOW = 2
 
+BENCHMARK_MESSAGE_COUNT=200
+REPLAY_MESSAGE_COUNT = 500
+
 ################################################################################
 # Globals
 ################################################################################
