@@ -81,27 +81,29 @@ class Node:
         # Create process based on node type
         try:
             if self.nodetype == NODE_SENDER:
-                self.process = multiprocessing.Process(target=self.action_sender, args=(console_queue,
-                                                                                        simstate, 
-                                                                                        deadlinemc, 
-                                                                                        sentmsgc,
-                                                                                        crypt_samples, 
-                                                                                        crypt_cpuper,
-                                                                                        encscheme_state,
-                                                                                        benchmarkinprogress,
-                                                                                        ready_event,
-                                                                                        replay_sim_state
-                                                                                        ))
+                self.process = multiprocessing.Process(target=self.action_sender, 
+                                                       args=(console_queue,
+                                                       simstate, 
+                                                       deadlinemc, 
+                                                       sentmsgc,
+                                                       crypt_samples, 
+                                                       crypt_cpuper,
+                                                       encscheme_state,
+                                                       benchmarkinprogress,
+                                                       ready_event,
+                                                       replay_sim_state
+                                                       ))
             elif self.nodetype == NODE_RECEIVER:
-                self.process =  multiprocessing.Process(target=self.action_receiver, args=(console_queue,
-                                                                                           simstate,
-                                                                                           crypt_samples, 
-                                                                                           crypt_cpuper,
-                                                                                           encscheme_state,
-                                                                                           benchmarkinprogress,
-                                                                                           ready_event,
-                                                                                           replay_sim_state
-                                                                                        ))
+                self.process =  multiprocessing.Process(target=self.action_receiver, 
+                                                        args=(console_queue,
+                                                              simstate,
+                                                              crypt_samples, 
+                                                              crypt_cpuper,
+                                                              encscheme_state,
+                                                              benchmarkinprogress,
+                                                              ready_event,
+                                                              replay_sim_state
+                                                            ))
         except Exception as e:
             print("[Error] Unable to create process {e}")
             import traceback
@@ -172,7 +174,7 @@ class Node:
 
                         if(True != firstCall):
                             # Consider Deadline missed, only if the value exceeds more 
-                            # than 2ms from the period
+                            # than 2ms (tolerance) from the period
                             if ((now > deadline) and
                                 (now - deadline) > 2000000):
                                 deadlinemisscounts.value += 1
@@ -225,14 +227,20 @@ class Node:
                             next_execution_ns += int(DELAY_IN_S * CONVERT_S_TO_NS)
                             prev = now
 
-                            # to send the message with the configured delay, Calculate how long to sleep
+                            # to send the message with the configured delay, Calculate how long to 
+                            # sleep
                             time_to_sleep_ns = next_execution_ns - time.perf_counter_ns()
                             if time_to_sleep_ns > 0:
+                                # sleep value should never exceed the periodicity configured
+                                time_to_sleep_ns = time_to_sleep_ns \
+                                    if (time_to_sleep_ns < (DELAY_IN_S * CONVERT_S_TO_NS))\
+                                    else (DELAY_IN_S * CONVERT_S_TO_NS)
                                 if (True == DEBUG_PRINT):
                                     print("Sleep time: " ,  time_to_sleep_ns * CONVERT_NS_TO_MS)
                                 # Provide the calculated sleep time
-                                time.sleep(time_to_sleep_ns * CONVERT_NS_TO_S)
+                                time.sleep(truncate_float(time_to_sleep_ns * CONVERT_NS_TO_S, 2))
                     
+                    # If replay of frames in progress for Replay attack simulation
                     elif(4 == replay_sim_state.value):
                         #Increment the sentmessagescount
                         sentmessagescount.value += 1
@@ -288,12 +296,12 @@ class Node:
                     received.is_rx = True
                     # Perform Decrytpion and acceptance
                     decrypteddata, decryptiontime, accepted = perform_decryption(received.data,
-                                                                                 decrypt_samples, 
-                                                                                 decrypt_cpuper,
-                                                                                 encscheme_state,
-                                                                                 received.arbitration_id,
-                                                                                 received.is_extended_id
-                                                                                 )
+                                                                        decrypt_samples, 
+                                                                        decrypt_cpuper,
+                                                                        encscheme_state,
+                                                                        received.arbitration_id,
+                                                                        received.is_extended_id
+                                                                        )
                     acceptancestate = "  ✅" if DECRYPT_OK == accepted else "  ❌"
                     print("Receiver: Data after Decryption:   " + str(list(decrypteddata)))
                     console_queue.put(f"Received: {received}    t_decrypt: {decryptiontime:.3f} us {acceptancestate}")
@@ -414,6 +422,11 @@ def setmsgperiodicity(period):
     '''Function sets the periodicity of CAN Message'''
     global DELAY_IN_S
     DELAY_IN_S = period/1000
+
+def truncate_float(f, decimal_places):
+    """Truncates a float to a specified number of decimal places."""
+    multiplier = 10 ** decimal_places
+    return int(f * multiplier) / multiplier
 
 
 
