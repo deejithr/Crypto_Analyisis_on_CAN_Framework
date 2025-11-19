@@ -114,6 +114,7 @@ def decrypt(algo, encobj, data):
     return data
 
 def generatemac(algo, encobj, data):
+    '''Function to generate the MAC'''
     if("AES128-CMAC" == algo):
         mac = encobj.generate_cmac_aes128(data, 2)
     elif("SHA256-HMAC" == algo):
@@ -121,6 +122,7 @@ def generatemac(algo, encobj, data):
     return mac
 
 def verifymac(algo, encobj, data, mac):
+    '''Function to verify the MAC received'''
     if("AES128-CMAC" == algo):
         result = encobj.verify_cmac_aes128(data, 2, mac)
     elif("SHA256-HMAC" == algo):
@@ -128,6 +130,7 @@ def verifymac(algo, encobj, data, mac):
     return result
 
 def encryption_scheme_encrypt(data, ready_event):
+    '''Function to encrypt the CAN message with Encryption Scheme'''
     global g_canid, g_keystreamgen, g_noncecreation, g_macgeneration
     global g_noncealgo, g_keystreamalgo, g_macgenalgo, g_sendercounter
     
@@ -156,17 +159,18 @@ def encryption_scheme_encrypt(data, ready_event):
     return can_payload
 
 def encryption_scheme_decrypt(data, canid):
+    '''Function to decrypt the CAN message applied with Encryption Scheme'''
     global g_receivercounter
 
     #Append the counter and CANID to create input for Nonce creation
-    nonceinput = canid.to_bytes(4,'big') + g_receivercounter.value.to_bytes(4,'big')
+    recv_nonceinput = canid.to_bytes(4,'big') + g_receivercounter.value.to_bytes(4,'big')
     #Encrypt this Nonce using Nonce-encrytpion Algorithm
-    Nonce = encrypt(g_noncealgo, g_noncecreation, nonceinput)
+    recv_Nonce = encrypt(g_noncealgo, g_noncecreation, recv_nonceinput)
     # Generate Keystream with this Nonce
-    S = encrypt(g_keystreamalgo, g_keystreamgen, Nonce)
+    recv_S = encrypt(g_keystreamalgo, g_keystreamgen, recv_Nonce)
     #Encrypted Payload
     P = []
-    for byte_a, byte_b in zip(data[0:6], S):
+    for byte_a, byte_b in zip(data[2:8], recv_S):
         P.append(byte_a ^ byte_b)
     #Convert P to bytearray
     P = bytes(P)
@@ -215,6 +219,7 @@ def perform_encryption(data, encrypt_samples, encrypt_cpuper,
     return data, encryptiontime
 
 def isMessageAccepted(encstate, data, canid):
+    '''Function returns if the received CAN message is accepted or not'''
     global g_macgeneration, g_macgenalgo, g_receivercounter
 
     verificationstatus = DECRYPT_NOT_OK
@@ -352,10 +357,12 @@ def setencryptionalgo(algorithm):
     g_encryption = initencryptionobject(g_encryptionalgo)
 
 def getsendercounter():
+    '''Retrieve the current Sender Counter of the Encryption Scheme'''
     global g_sendercounter
     return g_sendercounter.value
 
 def getreceivercounter():
+    '''Retrieve the current Receiver Counter of the Encryption Scheme'''
     global g_receivercounter
     return g_receivercounter.value
     

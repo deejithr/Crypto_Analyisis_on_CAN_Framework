@@ -190,7 +190,12 @@ class Node:
                                                                            can_msg.isextended,
                                                                            ready_event
                                                                            )
-                        print("Sender: Data before Encryption:  " + str(can_msg.data))
+                        # With encryption scheme, only 6 data bytes are send, 2 bytes will be 
+                        # truncated MAC
+                        if(True == encscheme_state.get()):
+                            print("Sender: Data before Encryption:  " + str(can_msg.data[0:6]))
+                        else:
+                            print("Sender: Data before Encryption:  " + str(can_msg.data))
 
                         msg = can.Message(
                             arbitration_id=can_msg.arbritration_id,
