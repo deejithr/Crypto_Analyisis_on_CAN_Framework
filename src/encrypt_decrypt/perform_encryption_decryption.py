@@ -156,11 +156,14 @@ def encryption_scheme_encrypt(data, ready_event):
     #Increment the counter, only if the Receiver event is set, to sync between sender and receiver
     if(True == ready_event.is_set()): 
         g_sendercounter.value += 1
+        print("g_sendercounter = ", g_sendercounter.value)
     return can_payload
 
 def encryption_scheme_decrypt(data, canid):
     '''Function to decrypt the CAN message applied with Encryption Scheme'''
     global g_receivercounter
+
+    print("g_receivercounter= ", g_receivercounter.value)
 
     #Append the counter and CANID to create input for Nonce creation
     recv_nonceinput = canid.to_bytes(4,'big') + g_receivercounter.value.to_bytes(4,'big')

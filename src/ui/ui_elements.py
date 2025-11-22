@@ -50,7 +50,11 @@ REPLAYSIM_WAIT_FOR_REPLAY_COMPLETION = 4
 REPLAYSIM_DEINIT = 5
 
 # Periodicity to print messages in the console
-CONSOLE_LOGGING_PERIOD = 335
+CONSOLE_LOGGING_PERIOD = 300
+
+# Counter Update Period for Encryption Mechanism
+COUNTER_UPDATE_PERIOD = 100
+
 
 # Description information for each cipher
 cipherdescription = {
@@ -644,29 +648,31 @@ class CANSimGUI(tb.Window):
         '''Function to print into the Sender Console text box'''
         global ui_senderqueue
 
-        if(None != ui_senderqueue):
-            #Print until the queue is empty
-            while not ui_senderqueue.empty():
-                msg = ui_senderqueue.get()
-                self.sender_console_text.insert(tk.END, "\n" + msg )
-                self.sender_console_text.see(tk.END)
-        # schedule next check
+        if(STARTED == self.simulation):
+            if(None != ui_senderqueue):
+                #Print until the queue is empty
+                while not ui_senderqueue.empty():
+                    msg = ui_senderqueue.get()
+                    self.sender_console_text.insert(tk.END, "\n" + msg )
+                    self.sender_console_text.see(tk.END)
+            # schedule next check
         self.after(CONSOLE_LOGGING_PERIOD, self.printtosenderconsole)  
 
     def printtoreceiverconsole(self):
         '''Function to print into the Receiver Console text box'''
         global ui_receiverqueue
 
-        if (None != ui_receiverqueue):
-            #Print until the queue is empty
-            while not ui_receiverqueue.empty():
-                msg = ui_receiverqueue.get()
-                # self.recv_console_text.insert(tk.END, )
-                if (msg.__contains__("  ✅")):
-                    self.recv_console_text.insert(tk.END, "\n" + msg, "green_bold")
-                else:
-                    self.recv_console_text.insert(tk.END, "\n" + msg, "red_bold")
-                self.recv_console_text.see(tk.END)
+        if(STARTED == self.simulation):
+            if (None != ui_receiverqueue):
+                #Print until the queue is empty
+                while not ui_receiverqueue.empty():
+                    msg = ui_receiverqueue.get()
+                    # self.recv_console_text.insert(tk.END, )
+                    if (msg.__contains__("  ✅")):
+                        self.recv_console_text.insert(tk.END, "\n" + msg, "green_bold")
+                    else:
+                        self.recv_console_text.insert(tk.END, "\n" + msg, "red_bold")
+                    self.recv_console_text.see(tk.END)
         # schedule next check
         self.after(CONSOLE_LOGGING_PERIOD, self.printtoreceiverconsole)  
 
@@ -776,8 +782,8 @@ class CANSimGUI(tb.Window):
         self.receivercounter_entry.insert(0, str(rcounter))
         
         if(True == simulationstate.value):
-            # Schedule this function to be called again after 1500 milliseconds (1.5 seconds)
-            self.after(1500, self.update_counters)
+            # Schedule this function to be called again after COUNTER_UPDATE_PERIOD milliseconds
+            self.after(COUNTER_UPDATE_PERIOD, self.update_counters)
     
     def display_popup(self):
         pid = os.getpid()
@@ -869,7 +875,7 @@ class CANSimGUI(tb.Window):
 
 
     def do_benchmark(self):
-        global sentmessagescount, deadlinemiss, bm_algo, bm_period
+        global sentmessagescount, deadlinemiss, bm_algo, bm_period, benchmarkthread
         
         #Run StateMachine
         if(BENCHMARK_INIT == self.benchmarkstate):
@@ -881,6 +887,7 @@ class CANSimGUI(tb.Window):
             self.benchmarkresults = True
             self.step = 0
             self.perf_benchmarkbtn.config(text="■ Benchmark Running", bootstyle="danger")
+            print("Benchmark started --- ")
             # To display the status of benchmark process
             benchmarkthread = threading.Thread(target = self.display_popup, args = ())
             benchmarkthread.start()
@@ -945,7 +952,14 @@ class CANSimGUI(tb.Window):
             
             # Compare the results
             self.do_comparison()
+            benchmarkthread.join()
             self.perf_benchmarkbtn.config(text="▶ Run Benchmark", bootstyle="success")
+            # Set periodicity back to 20ms
+            #Set the periodicity, after clearing the current value
+            self.canconf_entry3.delete(0, END)
+            self.canconf_entry3.insert(0, "20")
+            setmsgperiodicity(bm_period)
+            print("Benchmark Completed !!! ")
         
         # Schedule the task every 1 second, only in states other than INIT
         if(BENCHMARK_INIT != self.benchmarkstate):
