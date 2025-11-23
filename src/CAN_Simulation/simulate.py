@@ -295,7 +295,7 @@ class Node:
         while True == simulationstate.value:
             try:
                 received = None
-                received = self.nodebus.recv(timeout=1)
+                received = self.nodebus.recv(timeout=0.005)
                 if received is not None:
                     # Setting the received flag to True
                     received.is_rx = True

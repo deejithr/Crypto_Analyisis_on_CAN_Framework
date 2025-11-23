@@ -50,7 +50,7 @@ REPLAYSIM_WAIT_FOR_REPLAY_COMPLETION = 4
 REPLAYSIM_DEINIT = 5
 
 # Periodicity to print messages in the console
-CONSOLE_LOGGING_PERIOD = 300
+CONSOLE_LOGGING_PERIOD = 335
 
 # Counter Update Period for Encryption Mechanism
 COUNTER_UPDATE_PERIOD = 100
